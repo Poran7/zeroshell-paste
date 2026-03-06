@@ -1,1 +1,1 @@
-# zeroshell-paste
+# zeroshell
