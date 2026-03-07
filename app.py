@@ -289,17 +289,10 @@ def base(content,title="ZeroShell",theme='cyan'):
   <a class="logo" href="/">⚡ ZeroShell</a>
   <div class="nav-links">
     <a href="/">Home</a>
-    <a href="/new">+ New</a>
-    <a href="/search">Search</a>
     <a href="/leaderboard">🏆</a>
-    <a href="/tags">Tags</a>
-    <a href="/diff">Diff</a>
     <a href="/api/v1/docs">API</a>
-    <a href="/premium" style="color:#ffd700;font-weight:700;">&#128142; Premium</a>
-    <a href="/pastes">📝 Pastes</a>
-    <a href="/users" style="color:#ffd700;font-weight:700;">💎 VIP</a>
-    <a href="/announcements">📢 News</a>
-    <a href="https://t.me/ZeroShell_help" target="_blank" style="color:#229ed9;font-weight:700;">📢 Telegram</a>
+    <a href="/premium" style="color:#ffd700;font-weight:700;">Premium</a>
+    <a href="https://t.me/ZeroShell_help" target="_blank" style="color:#229ed9;font-weight:700;">Telegram</a>
   </div>
   <div style="display:flex;gap:5px;align-items:center;margin-left:auto;flex-shrink:0;">
     {nav_r}
@@ -311,17 +304,10 @@ def base(content,title="ZeroShell",theme='cyan'):
 </nav>
 <div class="mob-menu" id="mm">
   <a href="/">🏠 Home</a>
-  <a href="/new">📝 New Paste</a>
-  <a href="/search">🔍 Search</a>
   <a href="/leaderboard">🏆 Leaderboard</a>
-  <a href="/tags">🏷️ Tags</a>
-  <a href="/diff">🔀 Diff</a>
   <a href="/api/v1/docs">🌐 API</a>
-  <a href="/premium" style="color:#ffd700;font-weight:700;">&#128142; Premium</a>
-  <a href="/pastes">📝 All Pastes</a>
-  <a href="/users">💎 Premium Members</a>
-  <a href="/announcements">📢 Announcements</a>
-  <a href="https://t.me/ZeroShell_help" target="_blank" style="color:#229ed9;">📢 Telegram</a>
+  <a href="/premium" style="color:#ffd700;font-weight:700;">Premium</a>
+  <a href="https://t.me/ZeroShell_help" target="_blank" style="color:#229ed9;">Telegram</a>
   {mob_r}
   <a href="https://t.me/ZeroShell_help" target="_blank">✈️ Telegram Help</a>
   <a href="/toggle-mode">{mi} Dark/Light</a>
@@ -340,8 +326,6 @@ def base(content,title="ZeroShell",theme='cyan'):
     <a href="https://t.me/ZeroShell_help" target="_blank" style="color:#229ed9;text-decoration:none;font-weight:600;">✈️ Telegram</a>
     <a href="/api/v1/docs" style="color:var(--dim);text-decoration:none;">API</a>
     <a href="/leaderboard" style="color:var(--dim);text-decoration:none;">Leaderboard</a>
-    <a href="/tags" style="color:var(--dim);text-decoration:none;">Tags</a>
-    <a href="/diff" style="color:var(--dim);text-decoration:none;">Diff</a>
   </div>
   <div style="font-size:11px;color:var(--dim);opacity:.5;">© 2025 ZeroShell · Paste &amp; Share</div>
 </footer>
@@ -530,7 +514,7 @@ def all_users():
 <div style="flex:1;min-width:0;">
   <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:3px;">
     <a href="/profile/{u["username"]}" style="color:var(--p);text-decoration:none;font-size:16px;font-weight:700;">{u["username"]}</a>
-    <span style="background:linear-gradient(135deg,#ffd700,#ff8c00);color:#000;border-radius:99px;padding:1px 9px;font-size:10px;font-weight:800;letter-spacing:.5px;">💎 {note}</span>
+    <span style="background:linear-gradient(135deg,#ffd700,#ff8c00);color:#000;border-radius:99px;padding:1px 9px;font-size:10px;font-weight:800;letter-spacing:.5px;">VIP</span>
     {"<span style='background:rgba(63,185,80,.15);color:#3fb950;border:1px solid rgba(63,185,80,.3);border-radius:99px;padding:1px 7px;font-size:10px;font-weight:700;'>✅ Verified</span>" if u["email_verified"] else ""}
   </div>
   <div style="font-size:12px;color:var(--dim);margin-bottom:3px;">{bio_short}</div>
