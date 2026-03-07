@@ -228,7 +228,7 @@ label{{display:block;font-size:10px;color:var(--dim);margin-bottom:4px;text-tran
 .diff-eq{{display:block;color:var(--dim);}}
 .ai-box{{background:{p}08;border:1px solid {p}33;border-radius:8px;padding:12px;margin-top:10px;font-size:12px;line-height:1.6;}}
 .scan{{position:fixed;inset:0;pointer-events:none;z-index:999;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,{'0' if light else '.025'}) 2px,rgba(0,0,0,{'0' if light else '.025'}) 4px);}}
-footer{{text-align:center;padding:16px;color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;border-top:1px solid var(--border);margin-top:18px;}}
+footer{{color:var(--s);}}
 .install-btn{{background:linear-gradient(135deg,{p},{p}aa);color:#000;border:none;padding:6px 14px;border-radius:99px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif;display:none;}}
 @media(max-width:600px){{.g2,.g3,.g4{{grid-template-columns:1fr 1fr;}}}}
 </style>"""
@@ -320,14 +320,78 @@ def base(content,title="ZeroShell",theme='cyan'):
   Help
  </a>
 </div>
-<footer>
- <div style="display:flex;justify-content:center;gap:22px;flex-wrap:wrap;margin-bottom:5px;">
-  <span style="font-weight:700;color:var(--p);font-family:'Share Tech Mono',monospace;">ZeroShell v7.5</span>
-  <a href="https://t.me/ZeroShell_help" target="_blank" style="color:#229ed9;text-decoration:none;font-weight:600;">Telegram</a>
-  <a href="/api/v1/docs" style="color:var(--dim);text-decoration:none;">API</a>
-  <a href="/leaderboard" style="color:var(--dim);text-decoration:none;">Leaderboard</a>
- </div>
- <div style="font-size:11px;color:var(--dim);opacity:.5;">© 2025 ZeroShell · Paste &amp; Share</div>
+<footer style="background:var(--bg);border-top:1px solid var(--bd);margin-top:40px;padding:48px 0 0;">
+<div style="max-width:1280px;margin:0 auto;padding:0 24px;">
+  <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;padding-bottom:40px;">
+
+    <!-- About -->
+    <div>
+      <div style="font-size:20px;font-weight:900;color:var(--t);margin-bottom:16px;">
+        Zero<span style="color:var(--p);">Shell</span>
+      </div>
+      <p style="font-size:13px;color:var(--s);line-height:1.8;margin-bottom:16px;max-width:300px;">
+        ZeroShell is a fast and modern paste sharing platform for code, text, and configs. Share anything instantly with your team or the world.
+      </p>
+      <div style="font-size:12px;color:var(--s);margin-bottom:20px;">#1 Paste Site · Pastebin Alternative</div>
+      <!-- Social icons -->
+      <div style="display:flex;gap:10px;">
+        <a href="https://t.me/ZeroShell_help" target="_blank" style="width:38px;height:38px;background:rgba(128,128,128,.1);border:1px solid var(--bd);border-radius:50%;display:flex;align-items:center;justify-content:center;text-decoration:none;transition:all .2s;" onmouseover="this.style.borderColor='#229ed9'" onmouseout="this.style.borderColor='var(--bd)'">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="#229ed9"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
+        </a>
+        <a href="https://t.me/ZeroShell_Store" target="_blank" style="width:38px;height:38px;background:rgba(128,128,128,.1);border:1px solid var(--bd);border-radius:50%;display:flex;align-items:center;justify-content:center;text-decoration:none;transition:all .2s;" onmouseover="this.style.borderColor='#229ed9'" onmouseout="this.style.borderColor='var(--bd)'">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--s)" stroke-width="2"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        </a>
+        <a href="https://t.me/ZeroShell_Shop" target="_blank" style="width:38px;height:38px;background:rgba(128,128,128,.1);border:1px solid var(--bd);border-radius:50%;display:flex;align-items:center;justify-content:center;text-decoration:none;transition:all .2s;" onmouseover="this.style.borderColor='#ffd700'" onmouseout="this.style.borderColor='var(--bd)'">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--s)" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        </a>
+        <a href="/api/v1/docs" style="width:38px;height:38px;background:rgba(128,128,128,.1);border:1px solid var(--bd);border-radius:50%;display:flex;align-items:center;justify-content:center;text-decoration:none;transition:all .2s;" onmouseover="this.style.borderColor='var(--p)'" onmouseout="this.style.borderColor='var(--bd)'">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--s)" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- Hub -->
+    <div>
+      <div style="font-size:13px;font-weight:800;color:var(--t);letter-spacing:.5px;margin-bottom:18px;text-transform:uppercase;">Hub</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <a href="/" style="font-size:14px;color:var(--s);text-decoration:none;transition:color .15s;" onmouseover="this.style.color='var(--p)'" onmouseout="this.style.color='var(--s)'">ZeroShell</a>
+        <a href="/pastes" style="font-size:14px;color:var(--s);text-decoration:none;transition:color .15s;" onmouseover="this.style.color='var(--p)'" onmouseout="this.style.color='var(--s)'">Paste Archive</a>
+        <a href="/leaderboard" style="font-size:14px;color:var(--s);text-decoration:none;transition:color .15s;" onmouseover="this.style.color='var(--p)'" onmouseout="this.style.color='var(--s)'">Leaderboard</a>
+        <a href="/premium" style="font-size:14px;color:#ffd700;text-decoration:none;font-weight:600;">Premium</a>
+      </div>
+    </div>
+
+    <!-- Legal -->
+    <div>
+      <div style="font-size:13px;font-weight:800;color:var(--t);letter-spacing:.5px;margin-bottom:18px;text-transform:uppercase;">Community</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <a href="https://t.me/ZeroShell_help" target="_blank" style="font-size:14px;color:var(--s);text-decoration:none;transition:color .15s;" onmouseover="this.style.color='#229ed9'" onmouseout="this.style.color='var(--s)'">Telegram Help</a>
+        <a href="https://t.me/ZeroShell_Store" target="_blank" style="font-size:14px;color:var(--s);text-decoration:none;transition:color .15s;" onmouseover="this.style.color='#229ed9'" onmouseout="this.style.color='var(--s)'">Store</a>
+        <a href="https://t.me/ZeroShell_Shop" target="_blank" style="font-size:14px;color:var(--s);text-decoration:none;transition:color .15s;" onmouseover="this.style.color='#229ed9'" onmouseout="this.style.color='var(--s)'">Shop</a>
+      </div>
+    </div>
+
+    <!-- Useful Links -->
+    <div>
+      <div style="font-size:13px;font-weight:800;color:var(--t);letter-spacing:.5px;margin-bottom:18px;text-transform:uppercase;">Useful Links</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <a href="/new" style="font-size:14px;color:var(--s);text-decoration:none;transition:color .15s;" onmouseover="this.style.color='var(--p)'" onmouseout="this.style.color='var(--s)'">New Paste</a>
+        <a href="/pastes" style="font-size:14px;color:var(--s);text-decoration:none;transition:color .15s;" onmouseover="this.style.color='var(--p)'" onmouseout="this.style.color='var(--s)'">Paste Archive</a>
+        <a href="/api/v1/docs" style="font-size:14px;color:var(--s);text-decoration:none;transition:color .15s;" onmouseover="this.style.color='var(--p)'" onmouseout="this.style.color='var(--s)'">API Documentation</a>
+        <div style="display:flex;align-items:center;gap:7px;margin-top:4px;">
+          <div style="width:8px;height:8px;background:#3fb950;border-radius:50%;box-shadow:0 0 6px #3fb95066;"></div>
+          <span style="font-size:13px;color:var(--s);">All services are online</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom bar -->
+  <div style="border-top:1px solid var(--bd);padding:20px 0;text-align:center;">
+    <span style="font-size:13px;color:var(--s);">© 2026 ZeroShell. All Rights Reserved.</span>
+  </div>
+</div>
 </footer>
 </body></html>'''
 
@@ -560,7 +624,7 @@ def all_users():
   return base(c,"Premium Members",session.get('theme','cyan'))
 
 # ━━━ AUTO VERIFY ━━━
-PAYMENT_ADDRS={'USDT':'TBWUnddB2J5cckALZenPo6KQJwLzysEohE','BTC':'1N39KVvVK8itaGr7odbrTKnBdbwt4n7PoY','ETH':'0xd4c1ff57a77ce3a7b99ff96b410f05501b84b838','LTC':'LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf'}
+PAYMENT_ADDRS={'USDT':'TBWUnddB2J5cckALZenPo6KQJwLzysEohE','BTC':'1N39KVvVK8itaGr7odbrTKnBdbwt4n7PoY','ETH':'0x4382fd71bd5a4d921c27d851764d8c76ccc5d143','LTC':'LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf'}
 PLAN_PRICES={'1month':10,'6month':40,'1year':80}
 
 def auto_verify_tx(coin,tx_hash,plan):
@@ -734,7 +798,7 @@ def premium_page():
   cards=''.join(plan_card(p) for p in plans)
 
   # coin cards
-  COINS=[('USDT','TBWUnddB2J5cckALZenPo6KQJwLzysEohE','TRC20 (Tron)','#26a17b'),('BTC','1N39KVvVK8itaGr7odbrTKnBdbwt4n7PoY','Bitcoin','#f7931a'),('ETH','0xd4c1ff57a77ce3a7b99ff96b410f05501b84b838','ERC20','#627eea'),('LTC','LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf','Litecoin','#bfbbbb')]
+  COINS=[('USDT','TBWUnddB2J5cckALZenPo6KQJwLzysEohE','TRC20 (Tron)','#26a17b'),('BTC','1N39KVvVK8itaGr7odbrTKnBdbwt4n7PoY','Bitcoin','#f7931a'),('ETH','0x4382fd71bd5a4d921c27d851764d8c76ccc5d143','ERC20','#627eea'),('LTC','LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf','Litecoin','#bfbbbb')]
   coin_cards=''.join(
     '<div style="background:var(--card);border:1px solid var(--border);border-top:3px solid '+cl+';border-radius:12px;padding:16px;text-align:center;">'
     '<div style="font-size:14px;font-weight:800;color:'+cl+';margin-bottom:10px;">'+cn+'</div>'
