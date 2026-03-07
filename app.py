@@ -560,7 +560,7 @@ def all_users():
     return base(c,"Premium Members",session.get('theme','cyan'))
 
 # ━━━ AUTO VERIFY ━━━
-PAYMENT_ADDRS={'USDT':'TJgbQGqqmTxd1ijjvrMAE1miYHUJhoFT1c','BTC':'15DXasH25UnsD29tqS5wZwgkALr5hvYiVS','ETH':'0xd4c1ff57a77ce3a7b99ff96b410f05501b84b838','LTC':'LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf'}
+PAYMENT_ADDRS={'USDT':'TJgbQGqqmTxd1ijjvrMAE1miYHUJhoFT1c','BTC':'1N39KVvVK8itaGr7odbrTKnBdbwt4n7PoY','ETH':'0xd4c1ff57a77ce3a7b99ff96b410f05501b84b838','LTC':'LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf'}
 PLAN_PRICES={'1month':10,'6month':40,'1year':80}
 
 def auto_verify_tx(coin,tx_hash,plan):
@@ -731,6 +731,17 @@ def premium_page():
         return f'<div style="position:relative;background:var(--card);border:2px solid var(--border);{bdr}border-radius:14px;padding:28px 22px;text-align:center;transition:transform .2s;" onmouseover="this.style.transform=\'translateY(-4px)\'" onmouseout="this.style.transform=\'translateY(0)\'">{pop_badge}<div style="font-size:36px;margin-bottom:8px;">{ic}</div><div style="font-size:11px;font-weight:800;color:{p["color"]};letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">{p["label"]}</div><div style="font-size:44px;font-weight:800;color:var(--text);line-height:1;">{p["price"]}</div><div style="font-size:12px;color:var(--dim);margin-bottom:18px;">{p["period"]}</div><div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:18px;text-align:left;">{perks}</div><a href="https://t.me/ZeroShell_help" target="_blank" class="btn" style="width:100%;justify-content:center;background:{p["color"]};color:#000;border-color:{p["color"]};font-weight:800;font-size:13px;padding:10px;display:flex;">Get {p["dur"]}</a></div>'
 
     cards=''.join(plan_card(p) for p in plans)
+
+    # coin cards
+    COINS=[('USDT','TJgbQGqqmTxd1ijjvrMAE1miYHUJhoFT1c','TRC20 (Tron)','#26a17b'),('BTC','1N39KVvVK8itaGr7odbrTKnBdbwt4n7PoY','Bitcoin','#f7931a'),('ETH','0xd4c1ff57a77ce3a7b99ff96b410f05501b84b838','ERC20','#627eea'),('LTC','LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf','Litecoin','#bfbbbb')]
+    coin_cards=''.join(
+        '<div style="background:var(--card);border:1px solid var(--border);border-top:3px solid '+cl+';border-radius:12px;padding:16px;text-align:center;">'
+        '<div style="font-size:14px;font-weight:800;color:'+cl+';margin-bottom:10px;">'+cn+'</div>'
+        '<img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data='+addr+'" style="width:120px;height:120px;border-radius:6px;background:#fff;padding:5px;margin-bottom:8px;" loading="lazy">'
+        '<div style="font-size:10px;color:var(--dim);margin-bottom:6px;">'+net+'</div>'
+        '<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px;font-family:monospace;font-size:10px;word-break:break-all;margin-bottom:8px;">'+addr+'</div>'
+        '<button onclick="navigator.clipboard.writeText(\''+addr+'\').then(()=>{this.textContent=\'Copied!\';setTimeout(()=>this.textContent=\'Copy\',1500)})" style="background:'+cl+';color:#000;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;width:100%;">Copy</button></div>'
+        for cn,addr,net,cl in COINS)
 
     already=''
     if is_prem:
