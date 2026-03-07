@@ -560,7 +560,7 @@ def all_users():
   return base(c,"Premium Members",session.get('theme','cyan'))
 
 # ━━━ AUTO VERIFY ━━━
-PAYMENT_ADDRS={'USDT':'TBWUnddB2J5cckALZenPo6KQJwLzysEohE','BTC':'15DXasH25UnsD29tqS5wZwgkALr5hvYiVS','ETH':'0xd4c1ff57a77ce3a7b99ff96b410f05501b84b838','LTC':'LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf'}
+PAYMENT_ADDRS={'USDT':'TBWUnddB2J5cckALZenPo6KQJwLzysEohE','BTC':'1N39KVvVK8itaGr7odbrTKnBdbwt4n7PoY','ETH':'0xd4c1ff57a77ce3a7b99ff96b410f05501b84b838','LTC':'LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf'}
 PLAN_PRICES={'1month':10,'6month':40,'1year':80}
 
 def auto_verify_tx(coin,tx_hash,plan):
@@ -734,7 +734,7 @@ def premium_page():
   cards=''.join(plan_card(p) for p in plans)
 
   # coin cards
-  COINS=[('USDT','TBWUnddB2J5cckALZenPo6KQJwLzysEohE','TRC20 (Tron)','#26a17b'),('BTC','15DXasH25UnsD29tqS5wZwgkALr5hvYiVS','Bitcoin','#f7931a'),('ETH','0xd4c1ff57a77ce3a7b99ff96b410f05501b84b838','ERC20','#627eea'),('LTC','LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf','Litecoin','#bfbbbb')]
+  COINS=[('USDT','TBWUnddB2J5cckALZenPo6KQJwLzysEohE','TRC20 (Tron)','#26a17b'),('BTC','1N39KVvVK8itaGr7odbrTKnBdbwt4n7PoY','Bitcoin','#f7931a'),('ETH','0xd4c1ff57a77ce3a7b99ff96b410f05501b84b838','ERC20','#627eea'),('LTC','LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf','Litecoin','#bfbbbb')]
   coin_cards=''.join(
     '<div style="background:var(--card);border:1px solid var(--border);border-top:3px solid '+cl+';border-radius:12px;padding:16px;text-align:center;">'
     '<div style="font-size:14px;font-weight:800;color:'+cl+';margin-bottom:10px;">'+cn+'</div>'
@@ -1387,7 +1387,7 @@ def profile(username):
       f'</div></div>')
   badge_cards=''.join(badge_card(*b) for b in badges)
   # social links
-  links_raw=[user.get('link1','') or '',user.get('link2','') or '',user.get('link3','') or '',user.get('link4','') or '',user.get('link5','') or '']
+  _ud=dict(user); links_raw=[_ud.get('link1','') or '',_ud.get('link2','') or '',_ud.get('link3','') or '',_ud.get('link4','') or '',_ud.get('link5','') or '']
   def mk_link(url):
     if not url: return ''
     ul=url.lower()
@@ -1411,7 +1411,7 @@ def profile(username):
   links_html=''.join(mk_link(l) for l in links_raw if l)
   is_own=session.get('user')==username
   prem_banner=''
-  if user['is_premium']:
+  if _ud.get('is_premium',0):
     prem_banner=(f'<div style="background:linear-gradient(135deg,#7b2ff7,#f107a3,#ffd700);'
       f'border-radius:10px;padding:10px 16px;margin-bottom:12px;display:flex;align-items:center;gap:10px;">'
       f'<div style="flex:1;"><div style="font-size:13px;font-weight:800;color:#fff;">PREMIUM MEMBER</div>'
