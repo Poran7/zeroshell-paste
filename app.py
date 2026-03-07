@@ -560,7 +560,7 @@ def all_users():
   return base(c,"Premium Members",session.get('theme','cyan'))
 
 # ━━━ AUTO VERIFY ━━━
-PAYMENT_ADDRS={'USDT':'TJgbQGqqmTxd1ijjvrMAE1miYHUJhoFT1c','BTC':'15DXasH25UnsD29tqS5wZwgkALr5hvYiVS','ETH':'0x4382fd71bd5a4d921c27d851764d8c76ccc5d143','LTC':'LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf'}
+PAYMENT_ADDRS={'USDT':'TJgbQGqqmTxd1ijjvrMAE1miYHUJhoFT1c','BTC':'15DXasH25UnsD29tqS5wZwgkALr5hvYiVS','ETH':'0xd4c1ff57a77ce3a7b99ff96b410f05501b84b838','LTC':'LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf'}
 PLAN_PRICES={'1month':10,'6month':40,'1year':80}
 
 def auto_verify_tx(coin,tx_hash,plan):
@@ -734,7 +734,7 @@ def premium_page():
   cards=''.join(plan_card(p) for p in plans)
 
   # coin cards
-  COINS=[('USDT','TJgbQGqqmTxd1ijjvrMAE1miYHUJhoFT1c','TRC20 (Tron)','#26a17b'),('BTC','15DXasH25UnsD29tqS5wZwgkALr5hvYiVS','Bitcoin','#f7931a'),('ETH','0x4382fd71bd5a4d921c27d851764d8c76ccc5d143','ERC20','#627eea'),('LTC','LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf','Litecoin','#bfbbbb')]
+  COINS=[('USDT','TJgbQGqqmTxd1ijjvrMAE1miYHUJhoFT1c','TRC20 (Tron)','#26a17b'),('BTC','15DXasH25UnsD29tqS5wZwgkALr5hvYiVS','Bitcoin','#f7931a'),('ETH','0xd4c1ff57a77ce3a7b99ff96b410f05501b84b838','ERC20','#627eea'),('LTC','LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf','Litecoin','#bfbbbb')]
   coin_cards=''.join(
     '<div style="background:var(--card);border:1px solid var(--border);border-top:3px solid '+cl+';border-radius:12px;padding:16px;text-align:center;">'
     '<div style="font-size:14px;font-weight:800;color:'+cl+';margin-bottom:10px;">'+cn+'</div>'
@@ -792,35 +792,29 @@ def premium_page():
 {cards}
 </div>
 
-<!-- Payment section: crypto addresses left, form right -->
+<!-- 4 crypto QR cards in one row -->
 <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.08);">Pay with Crypto</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;align-items:start;">
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;">
+{coin_cards}
+</div>
 
-  <!-- Left: crypto addresses -->
-  <div>
-    <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.4);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px;">Send to address</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-    {coin_cards}
-    </div>
+<!-- Payment form full width below -->
+<div style="background:linear-gradient(135deg,#0a1520,#0d2035);border:1px solid rgba(0,245,255,.15);border-radius:14px;padding:22px;margin-bottom:24px;">
+  <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:16px;">Submit Payment</div>
+  {login_note}
+  {pay_form}
+</div>
+
+<!-- How it works -->
+<div style="background:rgba(0,245,255,.04);border:1px solid rgba(0,245,255,.12);border-radius:12px;padding:18px;margin-bottom:20px;">
+  <div style="font-size:14px;font-weight:800;color:#00f5ff;margin-bottom:14px;">How it works</div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;text-align:center;">
+    <div style="padding:14px;background:rgba(255,255,255,.04);border-radius:10px;"><div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:6px;">1</div><div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:3px;">Plan বেছে নিন</div><div style="font-size:11px;color:rgba(255,255,255,.4);">3M / 6M / 1Y / LT</div></div>
+    <div style="padding:14px;background:rgba(255,255,255,.04);border-radius:10px;"><div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:6px;">2</div><div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:3px;">Crypto পাঠান</div><div style="font-size:11px;color:rgba(255,255,255,.4);">QR scan বা address copy</div></div>
+    <div style="padding:14px;background:rgba(255,255,255,.04);border-radius:10px;"><div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:6px;">3</div><div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:3px;">TxID দিন</div><div style="font-size:11px;color:rgba(255,255,255,.4);">Form এ paste করুন</div></div>
+    <div style="padding:14px;background:rgba(0,245,255,.08);border-radius:10px;border:1px solid rgba(0,245,255,.2);"><div style="font-size:18px;font-weight:900;color:#00f5ff;margin-bottom:6px;">Auto</div><div style="font-size:12px;font-weight:800;color:#00f5ff;margin-bottom:3px;">Verified!</div><div style="font-size:11px;color:rgba(255,255,255,.4);">Instant Premium</div></div>
   </div>
-
-  <!-- Right: submit form -->
-  <div>
-    <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.4);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px;">After sending, submit TxID</div>
-    {login_note}
-    {pay_form}
-    <div style="margin-top:14px;background:rgba(0,245,255,.05);border:1px solid rgba(0,245,255,.15);border-radius:10px;padding:14px;">
-      <div style="font-size:12px;font-weight:700;color:#00f5ff;margin-bottom:8px;">How it works</div>
-      <div style="font-size:12px;color:rgba(255,255,255,.5);line-height:2;">
-        1. Plan select করুন<br>
-        2. Crypto address এ টাকা পাঠান<br>
-        3. TxID form এ দিন<br>
-        4. Auto verify — instant Premium!
-      </div>
-      <div style="margin-top:10px;font-size:11px;color:rgba(255,255,255,.25);">Help: <a href="https://t.me/ZeroShell_help" target="_blank" style="color:#229ed9;">@ZeroShell_help</a></div>
-    </div>
-  </div>
-
+  <div style="text-align:center;margin-top:12px;font-size:11px;color:rgba(255,255,255,.25);">Help: <a href="https://t.me/ZeroShell_help" target="_blank" style="color:#229ed9;">@ZeroShell_help</a></div>
 </div>
 </div>'''
   return base(c,"Premium",session.get('theme','cyan'))
