@@ -30,7 +30,7 @@ def init_db():
   CREATE TABLE IF NOT EXISTS rate_limits(id INTEGER PRIMARY KEY AUTOINCREMENT,ip TEXT,action TEXT,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
   CREATE TABLE IF NOT EXISTS payment_requests(id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER,plan TEXT,coin TEXT,tx_hash TEXT,amount TEXT,status TEXT DEFAULT 'pending',created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
   """)
-  safe=[("users","avatar","TEXT DEFAULT '👤'"),("users","theme","TEXT DEFAULT 'cyan'"),("users","is_admin","INTEGER DEFAULT 0"),("users","email","TEXT DEFAULT ''"),("users","totp_secret","TEXT DEFAULT ''"),("users","totp_enabled","INTEGER DEFAULT 0"),("users","api_key","TEXT DEFAULT ''"),("pastes","password","TEXT DEFAULT ''"),("pastes","pinned","INTEGER DEFAULT 0"),("pastes","expires_at","TIMESTAMP DEFAULT NULL"),("pastes","tags","TEXT DEFAULT ''"),("pastes","likes","INTEGER DEFAULT 0"),("pastes","dislikes","INTEGER DEFAULT 0"),("pastes","ai_summary","TEXT DEFAULT ''"),("users","is_premium","INTEGER DEFAULT 0"),("users","premium_note","TEXT DEFAULT ''"),("users","email_verified","INTEGER DEFAULT 0"),("users","link1","TEXT DEFAULT ''"),("users","link2","TEXT DEFAULT ''"),("users","link3","TEXT DEFAULT ''")]
+  safe=[("users","avatar","TEXT DEFAULT '👤'"),("users","theme","TEXT DEFAULT 'cyan'"),("users","is_admin","INTEGER DEFAULT 0"),("users","email","TEXT DEFAULT ''"),("users","totp_secret","TEXT DEFAULT ''"),("users","totp_enabled","INTEGER DEFAULT 0"),("users","api_key","TEXT DEFAULT ''"),("pastes","password","TEXT DEFAULT ''"),("pastes","pinned","INTEGER DEFAULT 0"),("pastes","expires_at","TIMESTAMP DEFAULT NULL"),("pastes","tags","TEXT DEFAULT ''"),("pastes","likes","INTEGER DEFAULT 0"),("pastes","dislikes","INTEGER DEFAULT 0"),("pastes","ai_summary","TEXT DEFAULT ''"),("users","is_premium","INTEGER DEFAULT 0"),("users","premium_note","TEXT DEFAULT ''"),("users","email_verified","INTEGER DEFAULT 0"),("users","link1","TEXT DEFAULT ''"),("users","link2","TEXT DEFAULT ''"),("users","link3","TEXT DEFAULT ''"),("users","link4","TEXT DEFAULT ''"),("users","link5","TEXT DEFAULT ''")]
   for t,c,d in safe:
     try: db.execute(f"ALTER TABLE {t} ADD COLUMN {c} {d}")
     except: pass
@@ -457,10 +457,10 @@ def all_pastes():
   syntax=request.args.get('syntax','')
   db=get_db()
   if syntax:
-    pastes=db.execute("SELECT p.*,u.username,u.avatar FROM pastes p LEFT JOIN users u ON p.user_id=u.id WHERE p.visibility='public' AND p.syntax=? ORDER BY p.created_at DESC LIMIT ? OFFSET ?",(syntax,per,offset)).fetchall()
+    pastes=db.execute("SELECT p.*,u.username,u.avatar,u.is_premium FROM pastes p LEFT JOIN users u ON p.user_id=u.id WHERE p.visibility='public' AND p.syntax=? ORDER BY u.is_premium DESC,p.created_at DESC LIMIT ? OFFSET ?",(syntax,per,offset)).fetchall()
     total=db.execute("SELECT COUNT(*) FROM pastes WHERE visibility='public' AND syntax=?",(syntax,)).fetchone()[0]
   else:
-    pastes=db.execute("SELECT p.*,u.username,u.avatar FROM pastes p LEFT JOIN users u ON p.user_id=u.id WHERE p.visibility='public' ORDER BY p.created_at DESC LIMIT ? OFFSET ?",(per,offset)).fetchall()
+    pastes=db.execute("SELECT p.*,u.username,u.avatar,u.is_premium FROM pastes p LEFT JOIN users u ON p.user_id=u.id WHERE p.visibility='public' ORDER BY u.is_premium DESC,p.created_at DESC LIMIT ? OFFSET ?",(per,offset)).fetchall()
     total=db.execute("SELECT COUNT(*) FROM pastes WHERE visibility='public'").fetchone()[0]
   db.close()
   pages=max(1,(total+per-1)//per)
@@ -560,7 +560,7 @@ def all_users():
   return base(c,"Premium Members",session.get('theme','cyan'))
 
 # ━━━ AUTO VERIFY ━━━
-PAYMENT_ADDRS={'USDT':'TBWUnddB2J5cckALZenPo6KQJwLzysEohE','BTC':'15DXasH25UnsD29tqS5wZwgkALr5hvYiVS','ETH':'0xd4c1ff57a77ce3a7b99ff96b410f05501b84b838','LTC':'LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf'}
+PAYMENT_ADDRS={'USDT':'TBWUnddB2J5cckALZenPo6KQJwLzysEohE','BTC':'15DXasH25UnsD29tqS5wZwgkALr5hvYiVS','ETH':'0x4382fd71bd5a4d921c27d851764d8c76ccc5d143','LTC':'LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf'}
 PLAN_PRICES={'1month':10,'6month':40,'1year':80}
 
 def auto_verify_tx(coin,tx_hash,plan):
@@ -717,10 +717,10 @@ def premium_page():
   db2=get_db(); prem_count=db2.execute("SELECT COUNT(*) FROM users WHERE is_premium=1").fetchone()[0]; db2.close()
 
   plans=[
-    {"label":"2 MONTHS","price":"$10","period":"/ 2 months","dur":"2 Months","color":"#3fb950","icon":"plant","perks":["VIP Badge","Premium list","Priority support","All features"]},
-    {"label":"6 MONTHS","price":"$30","period":"/ 6 months","dur":"6 Months","color":"#00f5ff","icon":"bolt","perks":["VIP Badge","Premium list","Priority support","All features","Save $10!"],"pop":True},
-    {"label":"1 YEAR","price":"$50","period":"/ year","dur":"1 Year","color":"#ffd700","icon":"crown","perks":["VIP Badge","Premium list","Priority support","All features","Best Value!"]},
-    {"label":"LIFETIME","price":"$80","period":"/ forever","dur":"Lifetime","color":"#ff4d94","icon":"star","perks":["VIP Badge FOREVER","Premium list","Priority support","All features","Never pay again!"]},
+    {"label":"3 MONTHS","price":"$20","period":"/ 3 months","dur":"3 Months","color":"#3fb950","icon":"plant","perks":["VIP Badge","10 posts/day","Glowing pastes","5 profile links","Premium banner"]},
+    {"label":"6 MONTHS","price":"$30","period":"/ 6 months","dur":"6 Months","color":"#00f5ff","icon":"bolt","perks":["VIP Badge","10 posts/day","Glowing pastes","5 profile links","Premium banner","Save $10!"],"pop":True},
+    {"label":"1 YEAR","price":"$50","period":"/ year","dur":"1 Year","color":"#ffd700","icon":"crown","perks":["VIP Badge","10 posts/day","Glowing pastes","5 profile links","Premium banner","Best Value!"]},
+    {"label":"LIFETIME","price":"$80","period":"/ forever","dur":"Lifetime","color":"#ff4d94","icon":"star","perks":["VIP Badge FOREVER","10 posts/day","Glowing pastes","5 profile links","Premium banner","Never pay again!"]},
   ]
 
   def plan_card(p):
@@ -734,7 +734,7 @@ def premium_page():
   cards=''.join(plan_card(p) for p in plans)
 
   # coin cards
-  COINS=[('USDT','TBWUnddB2J5cckALZenPo6KQJwLzysEohE','TRC20 (Tron)','#26a17b'),('BTC','15DXasH25UnsD29tqS5wZwgkALr5hvYiVS','Bitcoin','#f7931a'),('ETH','0xd4c1ff57a77ce3a7b99ff96b410f05501b84b838','ERC20','#627eea'),('LTC','LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf','Litecoin','#bfbbbb')]
+  COINS=[('USDT','TBWUnddB2J5cckALZenPo6KQJwLzysEohE','TRC20 (Tron)','#26a17b'),('BTC','15DXasH25UnsD29tqS5wZwgkALr5hvYiVS','Bitcoin','#f7931a'),('ETH','0x4382fd71bd5a4d921c27d851764d8c76ccc5d143','ERC20','#627eea'),('LTC','LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf','Litecoin','#bfbbbb')]
   coin_cards=''.join(
     '<div style="background:var(--card);border:1px solid var(--border);border-top:3px solid '+cl+';border-radius:12px;padding:16px;text-align:center;">'
     '<div style="font-size:14px;font-weight:800;color:'+cl+';margin-bottom:10px;">'+cn+'</div>'
@@ -757,7 +757,7 @@ def premium_page():
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
 <div><label style="color:rgba(255,255,255,.6);font-size:11px;font-weight:700;display:block;margin-bottom:5px;letter-spacing:.5px;">PLAN</label>
 <select name="plan" style="background:#0a1525;border:1px solid rgba(0,245,255,.25);border-radius:8px;color:#fff;padding:9px 12px;width:100%;font-size:13px;outline:none;">
-<option value="2month">2 Months - $10</option>
+<option value="3month">3 Months - $20</option>
 <option value="6month">6 Months - $30</option>
 <option value="1year">1 Year - $50</option>
 <option value="lifetime">Lifetime - $80</option>
