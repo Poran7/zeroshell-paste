@@ -24,8 +24,12 @@ def init_db():
     CREATE TABLE IF NOT EXISTS paste_views(id INTEGER PRIMARY KEY AUTOINCREMENT,paste_id INTEGER,viewer_key TEXT,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,UNIQUE(paste_id,viewer_key));
     CREATE TABLE IF NOT EXISTS activity(id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER,action TEXT,target_id INTEGER,target_type TEXT,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
     CREATE TABLE IF NOT EXISTS ads(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT NOT NULL,content TEXT NOT NULL,url TEXT DEFAULT '',active INTEGER DEFAULT 1,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+    CREATE TABLE IF NOT EXISTS bookmarks(id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER,paste_id INTEGER,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,UNIQUE(user_id,paste_id));
+    CREATE TABLE IF NOT EXISTS revisions(id INTEGER PRIMARY KEY AUTOINCREMENT,paste_id INTEGER,content TEXT NOT NULL,title TEXT NOT NULL,syntax TEXT DEFAULT 'text',editor_id INTEGER,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+    CREATE TABLE IF NOT EXISTS email_verifications(id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER,token TEXT UNIQUE,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+    CREATE TABLE IF NOT EXISTS rate_limits(id INTEGER PRIMARY KEY AUTOINCREMENT,ip TEXT,action TEXT,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
     """)
-    safe=[("users","avatar","TEXT DEFAULT '👤'"),("users","theme","TEXT DEFAULT 'cyan'"),("users","is_admin","INTEGER DEFAULT 0"),("users","email","TEXT DEFAULT ''"),("users","totp_secret","TEXT DEFAULT ''"),("users","totp_enabled","INTEGER DEFAULT 0"),("users","api_key","TEXT DEFAULT ''"),("pastes","password","TEXT DEFAULT ''"),("pastes","pinned","INTEGER DEFAULT 0"),("pastes","expires_at","TIMESTAMP DEFAULT NULL"),("pastes","tags","TEXT DEFAULT ''"),("pastes","likes","INTEGER DEFAULT 0"),("pastes","dislikes","INTEGER DEFAULT 0"),("pastes","ai_summary","TEXT DEFAULT ''")]
+    safe=[("users","avatar","TEXT DEFAULT '👤'"),("users","theme","TEXT DEFAULT 'cyan'"),("users","is_admin","INTEGER DEFAULT 0"),("users","email","TEXT DEFAULT ''"),("users","totp_secret","TEXT DEFAULT ''"),("users","totp_enabled","INTEGER DEFAULT 0"),("users","api_key","TEXT DEFAULT ''"),("users","email_verified","INTEGER DEFAULT 0"),("users","is_premium","INTEGER DEFAULT 0"),("users","premium_note","TEXT DEFAULT ''"),("pastes","password","TEXT DEFAULT ''"),("pastes","pinned","INTEGER DEFAULT 0"),("pastes","expires_at","TIMESTAMP DEFAULT NULL"),("pastes","tags","TEXT DEFAULT ''"),("pastes","likes","INTEGER DEFAULT 0"),("pastes","dislikes","INTEGER DEFAULT 0"),("pastes","ai_summary","TEXT DEFAULT ''")] 
     for t,c,d in safe:
         try: db.execute(f"ALTER TABLE {t} ADD COLUMN {c} {d}")
         except: pass
@@ -39,6 +43,72 @@ def cleanup_expired():
         db.commit(); db.close()
         return deleted.rowcount
     except: return 0
+
+# ━━━ v7.5 HELPERS ━━━
+
+import smtplib, threading
+from email.mime.text import MIMEText
+
+def send_verification_email(to_email, token, username):
+    """Send email verification - uses env SMTP settings"""
+    smtp_host = os.environ.get('SMTP_HOST','smtp.gmail.com')
+    smtp_port = int(os.environ.get('SMTP_PORT','587'))
+    smtp_user = os.environ.get('SMTP_USER','')
+    smtp_pass = os.environ.get('SMTP_PASS','')
+    site_url  = os.environ.get('SITE_URL','https://zeroshell-paste.up.railway.app')
+    if not smtp_user:
+        return False   # SMTP not configured, skip silently
+    try:
+        link = f"{site_url}/verify-email/{token}"
+        body = f"Hi {username},\n\nVerify your ZeroShell account:\n{link}\n\nThis link expires in 24 hours.\n\n⚡ ZeroShell Team"
+        msg  = MIMEText(body)
+        msg['Subject'] = '⚡ Verify your ZeroShell account'
+        msg['From']    = smtp_user
+        msg['To']      = to_email
+        s = smtplib.SMTP(smtp_host, smtp_port)
+        s.starttls(); s.login(smtp_user, smtp_pass)
+        s.sendmail(smtp_user, [to_email], msg.as_string()); s.quit()
+        return True
+    except: return False
+
+def rate_limit_check(action, limit=5, window=60):
+    """Return True if allowed, False if blocked"""
+    try:
+        ip = request.remote_addr or 'unknown'
+        db = get_db()
+        cutoff = (datetime.now()-timedelta(seconds=window)).isoformat()
+        count  = db.execute(
+            "SELECT COUNT(*) FROM rate_limits WHERE ip=? AND action=? AND created_at>?",
+            (ip, action, cutoff)).fetchone()[0]
+        if count >= limit:
+            db.close(); return False
+        db.execute("INSERT INTO rate_limits(ip,action) VALUES(?,?)", (ip, action))
+        # cleanup old
+        db.execute("DELETE FROM rate_limits WHERE created_at < ?",
+                   ((datetime.now()-timedelta(hours=2)).isoformat(),))
+        db.commit(); db.close(); return True
+    except: return True   # fail open
+
+def save_revision(paste_id, content, title, syntax, editor_id):
+    try:
+        db = get_db()
+        # keep max 10 revisions per paste
+        db.execute(
+            "INSERT INTO revisions(paste_id,content,title,syntax,editor_id) VALUES(?,?,?,?,?)",
+            (paste_id, content, title, syntax, editor_id))
+        old = db.execute(
+            "SELECT id FROM revisions WHERE paste_id=? ORDER BY created_at DESC LIMIT -1 OFFSET 10",
+            (paste_id,)).fetchall()
+        for row in old: db.execute("DELETE FROM revisions WHERE id=?",(row['id'],))
+        db.commit(); db.close()
+    except: pass
+
+def premium_badge_html(user):
+    if not user: return ''
+    if user['is_premium']:
+        note = user['premium_note'] or 'Premium'
+        return f'<span style="background:linear-gradient(135deg,#ffd700,#ff6b00);color:#000;border-radius:99px;padding:2px 9px;font-size:9px;font-weight:700;letter-spacing:1px;">💎 {note}</span>'
+    return ''
 
 # ━━━ HELPERS ━━━
 def hash_pw(pw): return hashlib.sha256(pw.encode()).hexdigest()
@@ -265,7 +335,7 @@ def base(content,title="ZeroShell",theme='cyan'):
     mi='☀️' if not light else '🌙'
     if u:
         adm='<a href="/admin">⚙️</a>' if session.get('is_admin') else ''
-        nav_r=f'<a href="/notifications">🔔{nb}</a><a href="/feed">📊</a><a href="/profile/{u}">{session.get("avatar","👤")} {u}</a>{adm}<a href="/logout">Exit</a>'
+        nav_r=f'<a href="/notifications">🔔{nb}</a><a href="/bookmarks">🔖</a><a href="/feed">📊</a><a href="/profile/{u}">{session.get("avatar","👤")} {u}</a>{adm}<a href="/logout">Exit</a>'
         mob_r=f'<a href="/notifications">🔔 Notifs{nb}</a><a href="/feed">📊 Feed</a><a href="/profile/{u}">{session.get("avatar","👤")} {u}</a><a href="/settings">⚙️ Settings</a>{"<a href=/admin>👑 Admin</a>" if session.get("is_admin") else ""}<a href="/logout">🚪 Logout</a>'
     else:
         nav_r='<a href="/login">Login</a><a href="/register" class="btn btn-p">Register</a>'
@@ -282,7 +352,7 @@ def base(content,title="ZeroShell",theme='cyan'):
 <nav><a class="logo" href="/">⚡ ZeroShell</a>
 <div class="nav-links">
   <a href="/">Home</a><a href="/new">+New</a><a href="/search">🔍</a>
-  <a href="/leaderboard">🏆</a><a href="/tags">🏷️</a><a href="/diff">🔀</a>
+  <a href="/leaderboard">🏆</a><a href="/tags">🏷️</a><a href="/diff">🔀</a><a href="/preview">👁️</a>
   {nav_r}
   <button class="install-btn" id="installBtn" onclick="installPWA()">📱 Install</button>
   <a href="/toggle-mode" class="mode-btn">{mi}</a>
@@ -294,7 +364,7 @@ def base(content,title="ZeroShell",theme='cyan'):
   {mob_r}<a href="/toggle-mode">{mi} Toggle Mode</a>
 </div>
 <div class="wrap">{alerts}{ad_html}{content}</div>
-<footer>⚡ ZEROSHELL v7.0 · <a href="https://t.me/ZeroShell_Store" style="color:var(--p);text-decoration:none;">✈️ t.me/ZeroShell_Store</a> · <a href="/api/v1/docs" style="color:var(--dim);text-decoration:none;">API</a></footer>
+<footer>⚡ ZEROSHELL v7.5 · <a href="https://t.me/ZeroShell_Store" style="color:var(--p);text-decoration:none;">✈️ t.me/ZeroShell_Store</a> · <a href="/api/v1/docs" style="color:var(--dim);text-decoration:none;">API</a></footer>
 </body></html>'''
 
 # ━━━ PWA Manifest & SW ━━━
@@ -414,6 +484,167 @@ def api_delete_paste(slug):
     return jsonify({'deleted':True})
 
 # ━━━ TOGGLE MODE ━━━
+
+# ━━━ EMAIL VERIFY ━━━
+@app.route('/verify-email/<token>')
+def verify_email(token):
+    db=get_db()
+    v=db.execute("SELECT * FROM email_verifications WHERE token=?",(token,)).fetchone()
+    if v:
+        db.execute("UPDATE users SET email_verified=1 WHERE id=?",(v['user_id'],))
+        db.execute("DELETE FROM email_verifications WHERE token=?",(token,))
+        db.commit(); db.close()
+        flash('✅ Email verified!','green')
+    else:
+        db.close(); flash('Invalid or expired link!','red')
+    return redirect('/')
+
+@app.route('/resend-verify')
+def resend_verify():
+    if not session.get('user_id'): return redirect('/login')
+    db=get_db(); user=db.execute("SELECT * FROM users WHERE id=?",(session['user_id'],)).fetchone()
+    if not user or not user['email'] or user['email_verified']: db.close(); return redirect('/')
+    token=secrets.token_urlsafe(32)
+    db.execute("DELETE FROM email_verifications WHERE user_id=?",(user['id'],))
+    db.execute("INSERT INTO email_verifications(user_id,token) VALUES(?,?)",(user['id'],token))
+    db.commit(); db.close()
+    threading.Thread(target=send_verification_email,args=(user['email'],token,user['username'])).start()
+    flash('Verification email sent!','green')
+    return redirect('/')
+
+# ━━━ BOOKMARK ━━━
+@app.route('/bookmark/<slug>')
+def toggle_bookmark(slug):
+    if not session.get('user_id'): return redirect('/login')
+    db=get_db(); paste=db.execute("SELECT id FROM pastes WHERE slug=?",(slug,)).fetchone()
+    if not paste: db.close(); return redirect('/')
+    ex=db.execute("SELECT id FROM bookmarks WHERE user_id=? AND paste_id=?",(session['user_id'],paste['id'])).fetchone()
+    if ex: db.execute("DELETE FROM bookmarks WHERE user_id=? AND paste_id=?",(session['user_id'],paste['id'])); msg='🔖 Removed'
+    else: db.execute("INSERT INTO bookmarks(user_id,paste_id) VALUES(?,?)",(session['user_id'],paste['id'])); msg='🔖 Saved!'
+    db.commit(); db.close()
+    flash(msg,'green')
+    return redirect(request.referrer or f'/paste/{slug}')
+
+@app.route('/bookmarks')
+def bookmarks():
+    if not session.get('user_id'): return redirect('/login')
+    db=get_db()
+    pastes=db.execute('''SELECT p.*,u.username,u.avatar,b.created_at as saved_at
+        FROM bookmarks b JOIN pastes p ON b.paste_id=p.id
+        LEFT JOIN users u ON p.user_id=u.id
+        WHERE b.user_id=? ORDER BY b.created_at DESC''',(session['user_id'],)).fetchall()
+    db.close()
+    pl=''.join(f'<a href="/paste/{p["slug"]}" class="pi"><div><div class="pt">{"🔒 " if p["password"] else ""}{p["title"]}</div><div class="pm">{p["avatar"] or "👤"} {p["username"] or "Anon"} · saved {p["saved_at"][:10]}</div></div><div style="display:flex;align-items:center;gap:6px;"><span class="pv">👁{p["views"]}</span><a href="/bookmark/{p["slug"]}" class="btn btn-r" style="font-size:9px;padding:2px 6px;" onclick="event.stopPropagation()">✕</a></div></a>' for p in pastes if not is_expired(p)) or '<div style="text-align:center;color:var(--dim);padding:20px;">No bookmarks yet!</div>'
+    c=f'<div style="max-width:700px;margin:0 auto;"><div style="font-size:15px;font-weight:700;color:var(--p);letter-spacing:2px;margin-bottom:14px;">🔖 BOOKMARKS ({len(pastes)})</div><div class="card">{pl}</div></div>'
+    return base(c,"Bookmarks",session.get('theme','cyan'))
+
+# ━━━ REVISIONS ━━━
+@app.route('/revisions/<slug>')
+def revisions(slug):
+    if not session.get('user_id'): return redirect('/login')
+    db=get_db()
+    paste=db.execute("SELECT * FROM pastes WHERE slug=?",(slug,)).fetchone()
+    if not paste or paste['user_id']!=session['user_id']: db.close(); flash('Not allowed!','red'); return redirect('/')
+    revs=db.execute('''SELECT r.*,u.username,u.avatar FROM revisions r
+        LEFT JOIN users u ON r.editor_id=u.id
+        WHERE r.paste_id=? ORDER BY r.created_at DESC''',(paste['id'],)).fetchall()
+    db.close()
+    rows=''.join(f'''<div class="pi" style="flex-direction:column;align-items:flex-start;gap:6px;">
+        <div style="display:flex;justify-content:space-between;width:100%;align-items:center;">
+            <div><div class="pt">v{len(revs)-i} — {r["title"]}</div>
+            <div class="pm">{r["avatar"] or "👤"} {r["username"] or "?"} · {r["created_at"][:16]} · {r["syntax"]}</div></div>
+            <a href="/restore/{slug}/{r["id"]}" class="btn btn-y" style="font-size:9px;padding:3px 7px;" onclick="return confirm('Restore this version?')">↩ Restore</a>
+        </div>
+        <div class="code" style="max-height:120px;font-size:10px;width:100%;">{__import__("html").escape(r["content"][:400])}{"..." if len(r["content"])>400 else ""}</div>
+    </div>''' for i,r in enumerate(revs)) or '<div style="text-align:center;color:var(--dim);padding:16px;">No revisions yet.</div>'
+    c=f'<div style="max-width:820px;margin:0 auto;"><div style="font-size:15px;font-weight:700;color:var(--p);letter-spacing:2px;margin-bottom:14px;">🔁 REVISION HISTORY — {paste["title"]}</div><div style="margin-bottom:10px;"><a href="/paste/{slug}" class="btn btn-o" style="font-size:10px;">← Back</a></div><div class="card">{rows}</div></div>'
+    return base(c,"Revisions",session.get('theme','cyan'))
+
+@app.route('/restore/<slug>/<int:rev_id>')
+def restore_revision(slug, rev_id):
+    if not session.get('user_id'): return redirect('/login')
+    db=get_db()
+    paste=db.execute("SELECT * FROM pastes WHERE slug=?",(slug,)).fetchone()
+    if not paste or paste['user_id']!=session['user_id']: db.close(); flash('Not allowed!','red'); return redirect('/')
+    rev=db.execute("SELECT * FROM revisions WHERE id=? AND paste_id=?",(rev_id,paste['id'])).fetchone()
+    if rev:
+        save_revision(paste['id'],paste['content'],paste['title'],paste['syntax'],session['user_id'])
+        db.execute("UPDATE pastes SET content=?,title=?,syntax=?,ai_summary='' WHERE slug=?",(rev['content'],rev['title'],rev['syntax'],slug))
+        db.commit(); flash('✅ Restored!','green')
+    db.close()
+    return redirect(f'/paste/{slug}')
+
+# ━━━ LIVE PREVIEW ━━━
+@app.route('/preview')
+def live_preview():
+    c='''<div style="max-width:1200px;margin:0 auto;">
+<div style="font-size:15px;font-weight:700;color:var(--p);letter-spacing:2px;margin-bottom:14px;">👁️ LIVE PREVIEW</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;height:75vh;">
+<div class="card" style="display:flex;flex-direction:column;padding:0;">
+  <div style="padding:8px 14px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;color:var(--p);letter-spacing:2px;">✏️ EDITOR</div>
+  <div style="padding:8px;flex:1;display:flex;flex-direction:column;gap:7px;">
+    <select id="lang" onchange="doPreview()" style="font-size:11px;padding:5px 8px;">
+      <option value="text">Plain Text</option>
+      <option value="html">HTML (rendered)</option>
+      <option value="markdown">Markdown</option>
+    </select>
+    <textarea id="editor" oninput="doPreview()" placeholder="Start typing..." style="flex:1;font-family:'Share Tech Mono',monospace;font-size:12px;resize:none;background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:7px;padding:10px;color:var(--text);outline:none;min-height:0;"></textarea>
+  </div>
+</div>
+<div class="card" style="display:flex;flex-direction:column;padding:0;">
+  <div style="padding:8px 14px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;color:var(--green);letter-spacing:2px;">👁️ PREVIEW</div>
+  <div id="preview" style="flex:1;overflow:auto;padding:14px;font-size:13px;line-height:1.7;"></div>
+</div>
+</div>
+<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+<button onclick="copyEditor()" class="btn btn-o" style="font-size:11px;">📋 Copy</button>
+<button onclick="openNew()" class="btn btn-p" style="font-size:11px;">📝 Create Paste →</button>
+</div>
+</div>
+<script>
+function doPreview(){
+  const val=document.getElementById('editor').value;
+  const lang=document.getElementById('lang').value;
+  const pre=document.getElementById('preview');
+  if(lang==='html'){pre.innerHTML=val;}
+  else if(lang==='markdown'){pre.innerHTML=mdToHtml(val);}
+  else{pre.innerHTML='<pre style="white-space:pre-wrap;font-family:Share Tech Mono,monospace;font-size:12px;">'+val.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</pre>';}
+}
+function mdToHtml(md){
+  return md
+    .replace(/^### (.+)/gm,'<h3 style="color:var(--p);margin:8px 0;">$1</h3>')
+    .replace(/^## (.+)/gm,'<h2 style="color:var(--p);margin:8px 0;">$1</h2>')
+    .replace(/^# (.+)/gm,'<h1 style="color:var(--p);margin:8px 0;">$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/`(.+?)`/g,'<code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px;font-family:monospace;">$1</code>')
+    .replace(/^\- (.+)/gm,'<li style="margin-left:16px;">$1</li>')
+    .replace(/^> (.+)/gm,'<blockquote style="border-left:3px solid var(--p);padding-left:10px;color:var(--dim);">$1</blockquote>')
+    .replace(/\n/g,'<br>');
+}
+function copyEditor(){navigator.clipboard.writeText(document.getElementById('editor').value).then(()=>toast('✅ Copied!'));}
+function openNew(){
+  const c=encodeURIComponent(document.getElementById('editor').value);
+  window.location.href='/new?prefill='+c;
+}
+document.getElementById('editor').addEventListener('keydown',e=>{
+  if(e.key==='Tab'){e.preventDefault();const s=e.target.selectionStart;e.target.value=e.target.value.substring(0,s)+'  '+e.target.value.substring(e.target.selectionEnd);e.target.selectionStart=e.target.selectionEnd=s+2;doPreview();}
+});
+</script>'''
+    return base(c,"Live Preview",session.get('theme','cyan'))
+
+# ━━━ ADMIN: PREMIUM MANAGEMENT ━━━
+@app.route('/admin/premium/<int:uid>', methods=['POST'])
+def admin_premium(uid):
+    if not session.get('is_admin'): return redirect('/')
+    action=request.form.get('action',''); note=request.form.get('note','Premium').strip()
+    db=get_db()
+    if action=='grant': db.execute("UPDATE users SET is_premium=1,premium_note=? WHERE id=?",(note,uid))
+    elif action=='revoke': db.execute("UPDATE users SET is_premium=0,premium_note='' WHERE id=?",(uid,))
+    db.commit(); db.close()
+    flash('Premium updated!','green')
+    return redirect('/admin')
+
 @app.route('/toggle-mode')
 def toggle_mode():
     session['light_mode']=not session.get('light_mode',False)
@@ -579,6 +810,8 @@ def feed():
 @app.route('/new',methods=['GET','POST'])
 def new_paste():
     fork_slug=request.args.get('fork',''); fork_data={}
+    prefill=request.args.get('prefill','')
+    if prefill and not fork_slug: fork_data={'title':'From Preview','content':prefill[:50000],'syntax':'text'}
     if fork_slug:
         db=get_db(); fp=db.execute("SELECT * FROM pastes WHERE slug=?",(fork_slug,)).fetchone(); db.close()
         if fp: fork_data={'title':f"Fork of {fp['title']}",'content':fp['content'],'syntax':fp['syntax']}
@@ -592,6 +825,7 @@ def new_paste():
         elif exp=='1d': expires_at=(datetime.now()+timedelta(days=1)).isoformat()
         elif exp=='1w': expires_at=(datetime.now()+timedelta(weeks=1)).isoformat()
         elif exp=='1m': expires_at=(datetime.now()+timedelta(days=30)).isoformat()
+        if not rate_limit_check('new_paste',20,60): flash('Slow down! Rate limit hit.','red'); return redirect('/new')
         if not title or not content: flash('Fill all fields!','red')
         else:
             slug=rand_slug(); db=get_db()
@@ -665,7 +899,7 @@ def view_paste(slug):
     lc2=len(paste['content'].split('\n')); chars=len(paste['content']); words=len(paste['content'].split())
     sz=len(paste['content'].encode()); ss=f"{sz/1024:.1f} KB" if sz>1024 else f"{sz} B"
     is_owner=session.get('user_id')==paste['user_id']
-    del_btn=f'<a href="/delete/{slug}" class="btn btn-r" style="font-size:9px;padding:3px 7px;" onclick="return confirm(\'Delete?\')">🗑</a>' if is_owner else ''
+    del_btn=(f'<a href="/delete/{slug}" class="btn btn-r" style="font-size:9px;padding:3px 7px;" onclick="return confirm(\'Delete?\')">🗑</a>') if is_owner else ''
     edit_btn=f'<a href="/edit/{slug}" class="btn btn-y" style="font-size:9px;padding:3px 7px;">✏️</a>' if is_owner else ''
     pin_btn=f'<a href="/pin/{slug}" class="btn btn-o" style="font-size:9px;padding:3px 7px;">{"📌✓" if paste["pinned"] else "📌"}</a>' if is_owner else ''
     al=f'<a href="/profile/{auth}" style="color:var(--p);text-decoration:none;">{av} {auth}</a>' if auth else 'Anonymous'
@@ -702,6 +936,8 @@ def view_paste(slug):
 <a href="{tg_url}" target="_blank" class="btn btn-o" style="font-size:9px;padding:3px 7px;">✈️</a>
 <a href="/download/{slug}" class="btn btn-g" style="font-size:9px;padding:3px 7px;">📥</a>
 <a href="/new?fork={slug}" class="btn btn-o" style="font-size:9px;padding:3px 7px;">🔎Fork</a>
+<a href="/bookmark/{slug}" class="btn btn-o" style="font-size:9px;padding:3px 7px;">🔖</a>
+{f'<a href="/revisions/{slug}" class="btn btn-o" style="font-size:9px;padding:3px 7px;">🔁</a>' if is_owner else ''}
 <a href="/diff?a={slug}" class="btn btn-o" style="font-size:9px;padding:3px 7px;">🔀Diff</a>
 {ai_btn}{edit_btn}{pin_btn}{del_btn}
 </div></div>
@@ -781,7 +1017,9 @@ def edit_paste(slug):
         t=request.form.get('title','').strip(); ct=request.form.get('content','').strip()
         sy=request.form.get('syntax','text'); vi=request.form.get('visibility','public')
         tags=','.join(x.strip() for x in request.form.getlist('tags') if x.strip())
-        if t and ct: db.execute("UPDATE pastes SET title=?,content=?,syntax=?,visibility=?,tags=?,ai_summary='' WHERE slug=?",(t,ct,sy,vi,tags,slug)); db.commit(); db.close(); flash('Updated!','green'); return redirect(f'/paste/{slug}')
+        if t and ct:
+            save_revision(paste['id'],paste['content'],paste['title'],paste['syntax'],session['user_id'])
+            db.execute("UPDATE pastes SET title=?,content=?,syntax=?,visibility=?,tags=?,ai_summary='' WHERE slug=?",(t,ct,sy,vi,tags,slug)); db.commit(); db.close(); flash('Updated!','green'); return redirect(f'/paste/{slug}')
         flash('Fill all fields!','red')
     db.close()
     cur_tags=paste['tags'].split(',') if paste['tags'] else []
@@ -1004,7 +1242,14 @@ def admin():
     syn_labels=json.dumps([s['syntax'] for s in syn_data])
     syn_vals=json.dumps([s['c'] for s in syn_data])
     db.close()
-    uh=''.join(f'<tr><td><a href="/profile/{u["username"]}" style="color:var(--p);text-decoration:none;">{u["avatar"] or "👤"} {u["username"]}</a></td><td style="color:var(--dim)">{u["created_at"][:10]}</td><td style="color:var(--green)">{u["total_views"]}</td><td>{"👑" if u["is_admin"] else "👤"}</td><td><a href="/admin/del-user/{u["id"]}" class="btn btn-r" style="font-size:8px;padding:2px 5px;" onclick="return confirm(\'Delete?\')">Del</a></td></tr>' for u in users)
+    def _uh_row(u):
+        prem='💎' if u['is_premium'] else ''
+        ver='✅' if u['email_verified'] else ''
+        role='👑' if u['is_admin'] else '👤'
+        p_action='revoke' if u['is_premium'] else 'grant'
+        p_label='💎✕' if u['is_premium'] else '💎+'
+        return f'<tr><td><a href="/profile/{u["username"]}" style="color:var(--p);text-decoration:none;">{u["avatar"] or "👤"} {u["username"]} {prem}{ver}</a></td><td style="color:var(--dim)">{u["created_at"][:10]}</td><td style="color:var(--green)">{u["total_views"]}</td><td>{role}</td><td style="display:flex;gap:3px;flex-wrap:wrap;"><form method="POST" action="/admin/premium/{u["id"]}"><input type="hidden" name="action" value="{p_action}"><button class="btn btn-y" style="font-size:8px;padding:1px 4px;">{p_label}</button></form><a href="/admin/del-user/{u["id"]}" class="btn btn-r" style="font-size:8px;padding:2px 5px;" onclick="return confirm(chr(39)+chr(68)+chr(101)+chr(108)+chr(63)+chr(39))">Del</a></td></tr>'
+    uh=''.join(_uh_row(u) for u in users)
     ph=''.join(f'<tr><td><a href="/paste/{p["slug"]}" style="color:var(--p);text-decoration:none;">{p["title"][:20]}</a></td><td style="color:var(--dim)">{p["username"] or "Anon"}</td><td style="color:var(--green)">{p["views"]}</td><td style="color:var(--dim)">{p["created_at"][:10]}</td><td><a href="/admin/del-paste/{p["slug"]}" class="btn btn-r" style="font-size:8px;padding:2px 5px;">Del</a></td></tr>' for p in pastes)
     adh=''.join(f'<tr><td>{a["title"]}</td><td style="color:var(--dim)">{a["content"][:26]}</td><td style="color:{"var(--green)" if a["active"] else "var(--red)"}">{"✅" if a["active"] else "❌"}</td><td><a href="/admin/toggle-ad/{a["id"]}" class="btn btn-o" style="font-size:8px;padding:2px 5px;">Toggle</a> <a href="/admin/del-ad/{a["id"]}" class="btn btn-r" style="font-size:8px;padding:2px 5px;">Del</a></td></tr>' for a in ads)
     lj=json.dumps(an_labels); pj=json.dumps(an_pastes); vj=json.dumps(an_views); uj=json.dumps(an_users)
@@ -1064,6 +1309,7 @@ def del_paste(slug):
 @app.route('/register',methods=['GET','POST'])
 def register():
     if request.method=='POST':
+        if not rate_limit_check('register',3,300): return _auth('Register','Too many attempts! Wait 5 minutes.')
         u=request.form.get('username','').strip(); email=request.form.get('email','').strip().lower()
         pw=request.form.get('password',''); pw2=request.form.get('password2','')
         tg=request.form.get('telegram','').strip().lstrip('@')
@@ -1079,12 +1325,20 @@ def register():
         db.execute("INSERT INTO users(username,email,password,telegram,is_admin) VALUES(?,?,?,?,?)",(u,email,hash_pw(pw),tg,ia))
         db.commit(); user=db.execute("SELECT * FROM users WHERE username=?",(u,)).fetchone(); db.close()
         session.update({'user':u,'user_id':user['id'],'is_admin':user['is_admin'],'avatar':user['avatar'] or '👤','theme':user['theme'] or 'cyan'})
+        if email:
+            token=secrets.token_urlsafe(32)
+            db2=get_db()
+            db2.execute("INSERT INTO email_verifications(user_id,token) VALUES(?,?)",(user['id'],token))
+            db2.commit(); db2.close()
+            threading.Thread(target=send_verification_email,args=(email,token,u)).start()
+            flash('📧 Verification email sent! Check your inbox.','green')
         return redirect(f'/profile/{u}')
     return _auth('Register')
 
 @app.route('/login',methods=['GET','POST'])
 def login():
     if request.method=='POST':
+        if not rate_limit_check('login',10,300): return _auth('Login','Too many login attempts! Wait 5 minutes.')
         lid=request.form.get('username','').strip(); pw=request.form.get('password','')
         totp_code=request.form.get('totp_code','').strip()
         db=get_db()
@@ -1132,4 +1386,3 @@ if __name__=='__main__':
     port=int(os.environ.get('PORT',5000))
     print(f"\n{'='*50}\n  ⚡  ZEROSHELL v7.0\n  🌐  http://localhost:{port}\n{'='*50}\n")
     app.run(host='0.0.0.0',port=port,debug=False)
-    
