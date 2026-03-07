@@ -160,17 +160,17 @@ def style(theme='cyan',light=False):
 body{{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;}}
 body::before{{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(128,128,128,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(128,128,128,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}}
 .wrap{{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:20px;}}
-nav{{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:{nav_bg};border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200;backdrop-filter:blur(12px);gap:8px;}}
-.logo{{font-family:'Share Tech Mono',monospace;font-size:18px;color:var(--p);text-decoration:none;letter-spacing:2px;text-shadow:0 0 10px {p}66;}}
-.nav-links{{display:flex;gap:4px;align-items:center;flex-wrap:wrap;}}
-.nav-links a{{color:var(--text);text-decoration:none;font-size:12px;font-weight:600;padding:3px 7px;border-radius:5px;transition:all .2s;}}
-.nav-links a:hover{{color:var(--p);background:rgba(128,128,128,.08);}}
-.hamburger{{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:4px;}}
-.hamburger span{{display:block;width:22px;height:2px;background:var(--text);border-radius:2px;}}
-.mob-menu{{display:none;flex-direction:column;gap:3px;padding:10px 20px;background:{nav_bg};border-bottom:1px solid var(--border);}}
-.mob-menu a{{color:var(--text);text-decoration:none;font-size:13px;font-weight:600;padding:7px 10px;border-radius:6px;border:1px solid var(--border);}}
-.mob-menu a:hover{{color:var(--p);border-color:var(--p);}}
-@media(max-width:700px){{.nav-links{{display:none;}}.hamburger{{display:flex;}}.mob-menu.open{{display:flex;}}}}
+nav{{background:{nav_bg};border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200;backdrop-filter:blur(16px);}}
+.logo{{font-family:'Share Tech Mono',monospace;font-size:16px;color:var(--p);text-decoration:none;letter-spacing:2px;text-shadow:0 0 12px {p}55;font-weight:700;flex-shrink:0;}}
+.nav-links{{display:flex;gap:2px;align-items:center;flex:1;flex-wrap:nowrap;overflow:hidden;}}
+.nav-links a{{color:var(--text);text-decoration:none;font-size:13px;font-weight:500;padding:5px 9px;border-radius:6px;transition:all .15s;white-space:nowrap;opacity:.8;}}
+.nav-links a:hover{{opacity:1;background:rgba(128,128,128,.1);}}
+.hamburger{{display:none;flex-direction:column;gap:4px;cursor:pointer;padding:6px;border-radius:6px;border:1px solid var(--border);background:transparent;}}
+.hamburger span{{display:block;width:18px;height:2px;background:var(--text);border-radius:2px;}}
+.mob-menu{{display:none;flex-direction:column;gap:2px;padding:8px 12px 14px;background:{nav_bg};border-bottom:1px solid var(--border);}}
+.mob-menu a{{color:var(--text);text-decoration:none;font-size:14px;font-weight:500;padding:9px 12px;border-radius:6px;}}
+.mob-menu a:hover{{background:rgba(128,128,128,.08);}}
+@media(max-width:800px){{.nav-links{{display:none;}}.hamburger{{display:flex;}}.mob-menu.open{{display:flex;}}}}
 #toast{{position:fixed;bottom:22px;right:18px;z-index:9999;padding:10px 18px;border-radius:9px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;background:var(--card);border:1px solid var(--p);color:var(--p);box-shadow:0 4px 20px {p}33;transform:translateY(60px);opacity:0;transition:all .3s cubic-bezier(.4,0,.2,1);pointer-events:none;}}
 #toast.show{{transform:translateY(0);opacity:1;}}
 .btn{{padding:5px 12px;border-radius:6px;border:none;cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-decoration:none;display:inline-block;transition:all .2s;}}
@@ -265,13 +265,12 @@ def base(content,title="ZeroShell",theme='cyan'):
     mi='☀️' if not light else '🌙'
     if u:
         adm='<a href="/admin">⚙️</a>' if session.get('is_admin') else ''
-        nav_r=f'<a href="/notifications">🔔{nb}</a><a href="/feed">📊</a><a href="/profile/{u}">{session.get("avatar","👤")} {u}</a>{adm}<a href="/logout">Exit</a>'
+        nav_r=f'<a href="/notifications" title="Notifications">🔔{nb}</a><a href="/feed" title="Feed">📊</a><a href="/profile/{u}" style="display:inline-flex;align-items:center;gap:5px;"><span>{session.get("avatar","👤")}</span><strong style="color:var(--p);">{u}</strong></a>{adm}<a href="/logout" style="color:var(--dim);">Logout</a>'
         mob_r=f'<a href="/notifications">🔔 Notifs{nb}</a><a href="/feed">📊 Feed</a><a href="/profile/{u}">{session.get("avatar","👤")} {u}</a><a href="/settings">⚙️ Settings</a>{"<a href=/admin>👑 Admin</a>" if session.get("is_admin") else ""}<a href="/logout">🚪 Logout</a>'
     else:
-        nav_r='<a href="/login">Login</a><a href="/register" class="btn btn-p">Register</a>'
+        nav_r='<a href="/login" style="font-weight:600;">Login</a><a href="/register" class="btn btn-p" style="padding:5px 14px;">Register</a>'
         mob_r='<a href="/login">Login</a><a href="/register">Register</a>'
     p_color=THEMES.get(theme,'#00f5ff')
-    tg_help='https://t.me/ZeroShell_help'
     return f'''<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="{p_color}">
@@ -281,49 +280,55 @@ def base(content,title="ZeroShell",theme='cyan'):
 <title>{title} - ZeroShell</title>{s}</head><body>
 {TOAST_JS}{MOB_JS}{PWA_JS}
 <nav>
-  <div class="nav-inner">
-    <a class="logo" href="/">⚡ ZeroShell</a>
-    <div class="nav-links">
-      <a href="/">Home</a>
-      <a href="/new">+ New Paste</a>
-      <a href="/search">🔍 Search</a>
-      <a href="/leaderboard">🏆</a>
-      <a href="/diff">🔀 Diff</a>
-      <a href="/preview">👁 Preview</a>
-      <a href="/api/v1/docs">🌐 API</a>
-    </div>
-    <div class="nav-right">
-      {nav_r}
-      <button class="install-btn" id="installBtn" onclick="installPWA()">📱</button>
-      <a href="/toggle-mode" class="mode-btn">{mi}</a>
-    </div>
-    <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+<div style="max-width:1280px;margin:0 auto;padding:0 20px;height:54px;display:flex;align-items:center;gap:6px;">
+  <a class="logo" href="/">⚡ ZeroShell</a>
+  <div class="nav-links">
+    <a href="/">Home</a>
+    <a href="/new">+ New</a>
+    <a href="/search">Search</a>
+    <a href="/leaderboard">🏆</a>
+    <a href="/tags">Tags</a>
+    <a href="/diff">Diff</a>
+    <a href="/api/v1/docs">API</a>
   </div>
+  <div style="display:flex;gap:5px;align-items:center;margin-left:auto;flex-shrink:0;">
+    {nav_r}
+    <button class="install-btn" id="installBtn" onclick="installPWA()">Install</button>
+    <a href="/toggle-mode" class="mode-btn">{mi}</a>
+  </div>
+  <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+</div>
 </nav>
 <div class="mob-menu" id="mm">
-  <a href="/">🏠 Home</a><a href="/new">📝 New Paste</a>
-  <a href="/search">🔍 Search</a><a href="/leaderboard">🏆 Leaderboard</a>
-  <a href="/diff">🔀 Diff Tool</a><a href="/preview">👁 Live Preview</a>
-  <a href="/api/v1/docs">🌐 API Docs</a>
+  <a href="/">🏠 Home</a>
+  <a href="/new">📝 New Paste</a>
+  <a href="/search">🔍 Search</a>
+  <a href="/leaderboard">🏆 Leaderboard</a>
+  <a href="/tags">🏷️ Tags</a>
+  <a href="/diff">🔀 Diff</a>
+  <a href="/api/v1/docs">🌐 API</a>
   {mob_r}
-  <a href="{tg_help}" target="_blank">✈️ Telegram Help</a>
-  <a href="/toggle-mode">{mi} Toggle Mode</a>
+  <a href="https://t.me/ZeroShell_help" target="_blank">✈️ Telegram Help</a>
+  <a href="/toggle-mode">{mi} Dark/Light</a>
 </div>
 <div class="wrap">{alerts}{ad_html}{content}</div>
-<!-- Telegram Helpline -->
-<div class="helpline">
-  <a href="{tg_help}" target="_blank" class="help-btn help-tg" title="Telegram Support">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
+<!-- Telegram helpline -->
+<div style="position:fixed;bottom:22px;left:18px;z-index:998;">
+  <a href="https://t.me/ZeroShell_help" target="_blank" style="display:flex;align-items:center;gap:7px;padding:9px 16px;border-radius:99px;background:#229ed9;color:#fff;text-decoration:none;font-size:13px;font-weight:700;box-shadow:0 4px 20px rgba(34,158,217,.4);transition:all .2s;">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
     Help
   </a>
 </div>
 <footer>
-  <div style="display:flex;justify-content:center;align-items:center;gap:16px;flex-wrap:wrap;">
-    <a href="/" style="color:var(--sub);text-decoration:none;font-size:12px;">⚡ ZeroShell v7.5</a>
-    <a href="{tg_help}" target="_blank" style="color:var(--p);text-decoration:none;font-size:12px;">✈️ Telegram</a>
-    <a href="/api/v1/docs" style="color:var(--sub);text-decoration:none;font-size:12px;">🌐 API</a>
-    <a href="/leaderboard" style="color:var(--sub);text-decoration:none;font-size:12px;">🏆 Leaderboard</a>
+  <div style="display:flex;justify-content:center;gap:22px;flex-wrap:wrap;margin-bottom:5px;">
+    <span style="font-weight:700;color:var(--p);font-family:'Share Tech Mono',monospace;">⚡ ZeroShell v7.5</span>
+    <a href="https://t.me/ZeroShell_help" target="_blank" style="color:#229ed9;text-decoration:none;font-weight:600;">✈️ Telegram</a>
+    <a href="/api/v1/docs" style="color:var(--dim);text-decoration:none;">API</a>
+    <a href="/leaderboard" style="color:var(--dim);text-decoration:none;">Leaderboard</a>
+    <a href="/tags" style="color:var(--dim);text-decoration:none;">Tags</a>
+    <a href="/diff" style="color:var(--dim);text-decoration:none;">Diff</a>
   </div>
+  <div style="font-size:11px;color:var(--dim);opacity:.5;">© 2025 ZeroShell · Paste &amp; Share</div>
 </footer>
 </body></html>'''
 
@@ -546,64 +551,66 @@ def home():
     pl=''.join(f'<a href="/paste/{p["slug"]}" class="pi {"pinned" if p["pinned"] else ""}"><div><div class="pt">{"📌 " if p["pinned"] else ""}{"🔒 " if p["password"] else ""}{p["title"]}{exp_tag(p)}</div><div class="pm">{p["avatar"] or "👤"} {p["username"] or "Anon"} · {p["created_at"][:10]} · {p["syntax"]}{" · ❤️"+str(p["likes"]) if p["likes"]>0 else ""}</div></div><div class="pv">👁 {p["views"]}</div></a>' for p in pastes if not is_expired(p)) or '<div style="text-align:center;color:var(--dim);padding:20px;">No pastes yet!</div>'
     tag_links=''.join(f'<a href="/?tag={t}" class="tag {"active" if tag==t else ""}">{t}</a>' for t in ALL_TAGS)
 
-    # Build sidebar
+    # sidebar
     try:
-        db2=get_db()
-        top_users=db2.execute("SELECT username,avatar,total_views FROM users ORDER BY total_views DESC LIMIT 5").fetchall()
-        hot_pastes=db2.execute("SELECT slug,title,views,likes FROM pastes WHERE visibility='public' ORDER BY views DESC LIMIT 5").fetchall()
-        db2.close()
-    except: top_users=[]; hot_pastes=[]
-    top_u_html=''.join('<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);"><span style="font-size:16px;">'+str(u["avatar"] or "👤")+'</span><a href="/profile/'+u["username"]+'" style="color:var(--p);text-decoration:none;font-size:12px;font-weight:600;flex:1;">'+u["username"]+'</a><span style="font-family:monospace;color:var(--green);font-size:11px;">👁'+str(u["total_views"])+'</span></div>' for u in top_users)
-    hot_p_html=''.join('<div style="padding:5px 0;border-bottom:1px solid var(--border);"><a href="/paste/'+p["slug"]+'" style="color:var(--p);text-decoration:none;font-size:12px;font-weight:600;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+p["title"]+'</a><span style="font-size:10px;color:var(--sub);">👁'+str(p["views"])+' · ❤️'+str(p["likes"])+'</span></div>' for p in hot_pastes)
-    sidebar=f'''<div class="sidebar">
-<div class="side-card">
-<div class="side-title">🔥 Hot Pastes</div>
-{hot_p_html or "<p style=color:var(--sub);font-size:12px;>No pastes yet</p>"}
+        _db=get_db()
+        _hot=_db.execute("SELECT slug,title,views,likes FROM pastes WHERE visibility='public' ORDER BY views DESC LIMIT 5").fetchall()
+        _top=_db.execute("SELECT username,avatar,total_views FROM users ORDER BY total_views DESC LIMIT 5").fetchall()
+        _db.close()
+    except: _hot=[]; _top=[]
+    hot_html=''
+    for _p in _hot:
+        hot_html+=f'<div style="padding:6px 0;border-bottom:1px solid var(--border);"><a href="/paste/{_p["slug"]}" style="color:var(--p);text-decoration:none;font-size:13px;font-weight:600;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{_p["title"]}</a><span style="font-size:11px;color:var(--dim);">👁 {_p["views"]}  ❤️ {_p["likes"]}</span></div>'
+    top_html=''
+    for _u in _top:
+        top_html+=f'<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);"><span style="font-size:17px;">{_u["avatar"] or "👤"}</span><a href="/profile/{_u["username"]}" style="color:var(--p);text-decoration:none;font-size:13px;font-weight:600;flex:1;">{_u["username"]}</a><span style="font-family:monospace;color:var(--green);font-size:12px;">👁 {_u["total_views"]}</span></div>'
+    tl_html=''
+    for t in ALL_TAGS:
+        active_class='active' if tag==t else ''
+        tl_html+=f'<a href="/?tag={t}" class="tag {active_class}">{t}</a>'
+    sidebar=f'''<div style="display:flex;flex-direction:column;gap:12px;width:280px;flex-shrink:0;">
+<div class="card" style="padding:14px;">
+  <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:.7px;text-transform:uppercase;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border);">🔥 Trending Pastes</div>
+  {hot_html or '<p style="color:var(--dim);font-size:13px;">No pastes yet</p>'}
 </div>
-<div class="side-card">
-<div class="side-title">🏆 Top Users</div>
-{top_u_html or "<p style=color:var(--sub);font-size:12px;>No users yet</p>"}
-<a href="/leaderboard" style="display:block;text-align:center;margin-top:8px;color:var(--p);font-size:11px;font-weight:600;text-decoration:none;">See all →</a>
+<div class="card" style="padding:14px;">
+  <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:.7px;text-transform:uppercase;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border);">🏆 Top Users</div>
+  {top_html or '<p style="color:var(--dim);font-size:13px;">No users yet</p>'}
+  <a href="/leaderboard" style="display:block;text-align:center;margin-top:10px;color:var(--p);font-size:12px;font-weight:600;text-decoration:none;">View all →</a>
 </div>
-<div class="side-card">
-<div class="side-title">⚡ Quick Actions</div>
-<div style="display:flex;flex-direction:column;gap:5px;">
-<a href="/new" class="qa-btn" style="justify-content:center;">📝 New Paste</a>
-<a href="/preview" class="qa-btn" style="justify-content:center;">👁 Live Preview</a>
-<a href="/diff" class="qa-btn" style="justify-content:center;">🔀 Diff Tool</a>
-<a href="/feed" class="qa-btn" style="justify-content:center;">📊 Activity Feed</a>
-{f'<a href="/bookmarks" class="qa-btn" style="justify-content:center;">🔖 Bookmarks</a>' if session.get("user") else ""}
+<div class="card" style="padding:14px;">
+  <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:.7px;text-transform:uppercase;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border);">📊 Stats</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
+    <div class="sb"><span class="sn" style="color:var(--p);font-size:18px;">{tp}</span><span class="sl">Pastes</span></div>
+    <div class="sb"><span class="sn" style="color:var(--green);font-size:18px;">{tv}</span><span class="sl">Views</span></div>
+    <div class="sb"><span class="sn" style="color:var(--yellow);font-size:18px;">{tu}</span><span class="sl">Users</span></div>
+    <div class="sb"><span class="sn" style="color:var(--dim);font-size:11px;">v7.5</span><span class="sl">Version</span></div>
+  </div>
 </div>
-</div>
-<div class="side-card">
-<div class="side-title">🌐 Stats</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-<div class="sb"><span class="sn" style="color:var(--p);font-size:16px;">{tp}</span><span class="sl">Pastes</span></div>
-<div class="sb"><span class="sn" style="color:var(--green);font-size:16px;">{tv}</span><span class="sl">Views</span></div>
-<div class="sb"><span class="sn" style="color:var(--yellow);font-size:16px;">{tu}</span><span class="sl">Users</span></div>
-<div class="sb"><span class="sn" style="color:var(--sub);font-size:11px;">v7.5</span><span class="sl">Version</span></div>
-</div>
+<div class="card" style="padding:14px;">
+  <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:.7px;text-transform:uppercase;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border);">⚡ Quick</div>
+  <div style="display:flex;flex-direction:column;gap:5px;">
+    <a href="/new" class="btn btn-p" style="justify-content:center;">📝 New Paste</a>
+    <a href="/diff" class="btn btn-o" style="justify-content:center;">🔀 Diff Tool</a>
+    <a href="/feed" class="btn btn-o" style="justify-content:center;">📊 Activity</a>
+  </div>
 </div>
 </div>'''
-
-    qa_tag_links=''.join(f'<a href="/?tag={t}" class="qa-btn {"active" if tag==t else ""}">'+t+'</a>' for t in ALL_TAGS)
-    c=f'''<div style="text-align:center;padding:28px 20px 16px;">
-<div style="font-family:'Share Tech Mono',monospace;font-size:clamp(22px,4vw,40px);color:var(--p);text-shadow:0 0 22px var(--p)55;letter-spacing:4px;margin-bottom:6px;">⚡ ZEROSHELL</div>
-<div style="color:var(--sub);font-size:11px;letter-spacing:3px;margin-bottom:16px;">PASTE · SHARE · TRACK · v7.5</div>
-<a href="/new" class="btn btn-p" style="font-size:14px;padding:9px 28px;">+ New Paste</a>
+    c=f'''<div style="text-align:center;padding:32px 20px 18px;">
+<div style="font-family:'Share Tech Mono',monospace;font-size:clamp(22px,5vw,44px);color:var(--p);text-shadow:0 0 28px var(--p)44;letter-spacing:4px;margin-bottom:6px;">⚡ ZEROSHELL</div>
+<div style="color:var(--dim);font-size:12px;letter-spacing:3px;margin-bottom:18px;">PASTE · SHARE · TRACK · v7.5</div>
+<a href="/new" class="btn btn-p" style="font-size:15px;padding:10px 32px;border-radius:8px;">+ New Paste</a>
 </div>
-<!-- Quick actions bar -->
-<div class="qa-bar">
-<span style="font-size:10px;font-weight:700;color:var(--sub);letter-spacing:.8px;text-transform:uppercase;margin-right:4px;">Browse:</span>
-{qa_tag_links}
+<div style="margin-bottom:12px;display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
+<span style="font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-right:3px;">Filter:</span>
+{tl_html}
 </div>
-<!-- Main layout with sidebar -->
-<div class="main-layout">
-<div>
-<div style="font-size:12px;font-weight:700;color:var(--sub);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;">🕐 Recent Pastes{f" · #{tag}" if tag else ""}</div>
-{pl}
-</div>
-{sidebar}
+<div style="display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start;">
+  <div>
+    <div style="font-size:12px;font-weight:700;color:var(--dim);letter-spacing:.7px;text-transform:uppercase;margin-bottom:10px;">Recent Pastes{f" · #{tag}" if tag else ""}</div>
+    {pl}
+  </div>
+  {sidebar}
 </div>'''
     return base(c,"Home",session.get('theme','cyan'))
 
@@ -633,8 +640,19 @@ def leaderboard():
     db=get_db()
     users=db.execute("SELECT u.*,COUNT(p.id) as pc FROM users u LEFT JOIN pastes p ON u.id=p.user_id GROUP BY u.id ORDER BY u.total_views DESC LIMIT 20").fetchall()
     db.close()
-    rows=''.join(f'<div style="display:flex;align-items:center;gap:12px;padding:9px 13px;background:rgba(0,0,0,.15);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;"><div style="font-family:\'Share Tech Mono\',monospace;font-size:15px;font-weight:700;width:28px;text-align:center;">{["🥇","🥈","🥉"][i] if i<3 else "#"+str(i+1)}</div><div style="font-size:20px;">{u["avatar"] or "👤"}</div><div style="flex:1;"><a href="/profile/{u["username"]}" style="color:var(--p);text-decoration:none;font-size:12px;font-weight:700;">{u["username"]}</a><div style="font-size:9px;color:var(--dim);">{u["pc"]} pastes</div></div><div style="font-family:\'Share Tech Mono\',monospace;color:var(--green);font-size:12px;font-weight:700;">👁 {u["total_views"]}</div></div>' for i,u in enumerate(users)) or '<div style="text-align:center;color:var(--dim);padding:16px;">No users!</div>'
-    c=f'<div style="max-width:600px;margin:0 auto;"><div style="font-size:16px;font-weight:700;color:var(--p);letter-spacing:2px;margin-bottom:14px;text-align:center;">🏆 LEADERBOARD</div><div class="card">{rows}</div></div>'
+    def _lbrow(i,u2):
+        medals2=['🥇','🥈','🥉']; mc2=['#ffd700','#c0c0c0','#cd7f32']
+        rank2=medals2[i] if i<3 else '#'+str(i+1); rc2=mc2[i] if i<3 else 'var(--dim)'; bc2='border-color:'+mc2[i]+'44;' if i<3 else ''
+        return '<div style="display:flex;align-items:center;gap:14px;padding:13px 16px;background:var(--bg);border:1px solid var(--border);'+bc2+'border-radius:10px;margin-bottom:8px;"><div style="font-size:20px;width:34px;text-align:center;font-weight:700;color:'+rc2+';">'+rank2+'</div><div style="font-size:26px;">'+(u2["avatar"] or "👤")+'</div><div style="flex:1;min-width:0;"><a href="/profile/'+u2["username"]+'" style="color:var(--p);text-decoration:none;font-size:15px;font-weight:700;">'+u2["username"]+'</a><div style="font-size:12px;color:var(--dim);">'+str(u2["pc"])+' pastes</div></div><div style="text-align:right;"><div style="font-family:monospace;color:var(--green);font-size:16px;font-weight:700;">👁 '+str(u2["total_views"])+'</div></div></div>'
+    rows=''.join(_lbrow(i,u) for i,u in enumerate(users)) or f'<div style="text-align:center;padding:48px;color:var(--dim);"><div style="font-size:52px;margin-bottom:12px;">🏆</div><div>No users yet! <a href="/register" style="color:var(--p);">Register →</a></div></div>'
+    c=f'''<div style="max-width:680px;margin:0 auto;">
+<div style="text-align:center;padding:24px 0 20px;">
+<div style="font-size:44px;margin-bottom:8px;">🏆</div>
+<div style="font-size:26px;font-weight:800;color:var(--text);">Leaderboard</div>
+<div style="font-size:13px;color:var(--dim);margin-top:4px;">Top users by total paste views</div>
+</div>
+<div class="card">{rows}</div>
+</div>'''
     return base(c,"Leaderboard",session.get('theme','cyan'))
 
 @app.route('/feed')
@@ -943,67 +961,31 @@ def profile(username):
         fb=f'<a href="/follow/{username}" class="{fc}">{ft}</a>'
     tg=f'<a href="https://t.me/{user["telegram"]}" target="_blank" style="color:#00aaff;font-size:10px;text-decoration:none;">✈️ @{user["telegram"]}</a>' if user['telegram'] else ''
     lj=json.dumps(chart_labels); pj=json.dumps(pd2); vj=json.dumps(vd)
-    # Build contribution grid (last 52 weeks = 364 days)
-    contrib_cells=[]
-    for week in range(52):
-        row_cells=[]
-        for day in range(7):
-            day_offset=363-(week*7+day)
-            ds=(datetime.now()-timedelta(days=day_offset)).strftime('%Y-%m-%d')
-            try:
-                db3=get_db()
-                cnt=db3.execute("SELECT COUNT(*) FROM pastes WHERE user_id=? AND DATE(created_at)=?",(user['id'],ds)).fetchone()[0]
-                db3.close()
-            except: cnt=0
-            lvl=0 if cnt==0 else (1 if cnt==1 else (2 if cnt<4 else 3))
-            colors=['var(--border)','#0e4429','#006d32','#26a641','#39d353']
-            light_colors=['#ebedf0','#9be9a8','#40c463','#30a14e','#216e39']
-            lc=session.get('light_mode',False)
-            c3=light_colors[lvl] if lc else colors[lvl]
-            row_cells.append(f'<div class="contrib-cell" style="background:{c3};" title="{ds}: {cnt} pastes"></div>')
-        contrib_cells.append('<div class="contrib-row">'+''.join(row_cells)+'</div>')
-
-    c=f'''<div style="max-width:1000px;margin:0 auto;display:grid;grid-template-columns:260px 1fr;gap:20px;">
-<!-- LEFT: GitHub-style profile sidebar -->
-<div>
-<div style="text-align:center;margin-bottom:16px;">
-<div class="av-lg" style="width:100px;height:100px;font-size:52px;margin:0 auto 12px;border:3px solid var(--border);box-shadow:0 0 0 4px {p}22;">{av}</div>
-<div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:2px;">{username}</div>
-{f'<div style="font-size:12px;color:var(--sub);margin-bottom:8px;">{user["bio"]}</div>' if user["bio"] else ""}
-<div style="margin:8px 0;">{bh}</div>
-{fb}
+    c=f'''<div style="max-width:880px;margin:0 auto;">
+<div class="card"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+<div class="av">{av}</div>
+<div style="flex:1;"><div style="font-size:19px;font-weight:700;color:var(--p);margin-bottom:3px;">{username}</div>
+<div style="margin-bottom:4px;">{bh}</div>
+<div style="color:var(--dim);font-size:11px;">{user["bio"] or ""}</div>{tg}</div>
+<div style="display:flex;gap:6px;align-items:center;">{fb}{eb}</div></div>
+<div class="sg">
+<div class="sb"><span class="sn" style="color:var(--p);">{len(pastes)}</span><span class="sl">Pastes</span></div>
+<div class="sb"><span class="sn" style="color:var(--green);">{user["total_views"]}</span><span class="sl">Views</span></div>
+<div class="sb"><span class="sn" style="color:var(--yellow);">{p30}</span><span class="sl">30d</span></div>
+<div class="sb"><span class="sn" style="color:var(--p);">{followers}</span><span class="sl">Followers</span></div>
+<div class="sb"><span class="sn" style="color:var(--dim);">{following}</span><span class="sl">Following</span></div>
+</div></div>
+<div class="g2">
+<div class="card"><div style="font-size:9px;font-weight:700;color:var(--p);letter-spacing:2px;margin-bottom:7px;">📊 PASTES 7d</div><canvas id="pc2" height="100"></canvas></div>
+<div class="card"><div style="font-size:9px;font-weight:700;color:var(--green);letter-spacing:2px;margin-bottom:7px;">👁 VIEWS 7d</div><canvas id="vc2" height="100"></canvas></div></div>
+<div class="card"><div style="font-size:11px;font-weight:700;color:var(--p);letter-spacing:2px;margin-bottom:9px;">📝 PASTES</div>{pl}</div>
 </div>
-<div style="border-top:1px solid var(--border);padding-top:12px;display:flex;flex-direction:column;gap:8px;font-size:12px;color:var(--sub);">
-{f'<div><span style="margin-right:6px;">✈️</span><a href="https://t.me/{user["telegram"]}" target="_blank" style="color:var(--p);text-decoration:none;">@{user["telegram"]}</a></div>' if user["telegram"] else ""}
-<div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:4px;">
-  <span><strong style="color:var(--text);">{followers}</strong> <span>followers</span></span>
-  <span><strong style="color:var(--text);">{following}</strong> <span>following</span></span>
-</div>
-<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
-<div class="sb" style="flex:1;min-width:60px;"><span class="sn" style="color:var(--p);font-size:16px;">{len(pastes)}</span><span class="sl">Pastes</span></div>
-<div class="sb" style="flex:1;min-width:60px;"><span class="sn" style="color:var(--green);font-size:16px;">{user["total_views"]}</span><span class="sl">Views</span></div>
-</div>
-<div style="font-size:10px;margin-top:2px;color:var(--sub);">Joined {user["created_at"][:10]}</div>
-</div>
-{eb}
-</div>
-<!-- RIGHT: Activity + pastes -->
-<div>
-<!-- Contribution Graph -->
-<div class="card" style="margin-bottom:14px;">
-<div style="font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px;">{sum(p2["views"] for p2 in pastes)} contributions in the last year</div>
-<div class="contrib-grid" style="flex-direction:row;gap:3px;overflow-x:auto;">{"".join(contrib_cells)}</div>
-<div style="display:flex;justify-content:flex-end;align-items:center;gap:5px;margin-top:6px;font-size:10px;color:var(--sub);">Less <div style="width:10px;height:10px;background:var(--border);border-radius:2px;"></div><div style="width:10px;height:10px;background:#0e4429;border-radius:2px;"></div><div style="width:10px;height:10px;background:#26a641;border-radius:2px;"></div><div style="width:10px;height:10px;background:#39d353;border-radius:2px;"></div> More</div>
-</div>
-<!-- Charts -->
-<div class="g2" style="margin-bottom:14px;">
-<div class="card"><div style="font-size:9px;font-weight:700;color:var(--p);letter-spacing:2px;margin-bottom:7px;">PASTES 7d</div><canvas id="pc2" height="100"></canvas></div>
-<div class="card"><div style="font-size:9px;font-weight:700;color:var(--green);letter-spacing:2px;margin-bottom:7px;">VIEWS 7d</div><canvas id="vc2" height="100"></canvas></div></div>
-<!-- Pastes -->
-<div style="font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px;">Pastes</div>
-{pl}
-</div>
-</div>'''
+<script>
+const lb={lj},pd={pj},vd2={vj};
+const co={{plugins:{{legend:{{display:false}}}},scales:{{x:{{ticks:{{color:"#4a6a80",font:{{size:8}}}},grid:{{color:"rgba(128,128,128,.07)"}}}},y:{{ticks:{{color:"#4a6a80",font:{{size:8}},stepSize:1}},grid:{{color:"rgba(128,128,128,.07)"}}}}}}}}; 
+new Chart(document.getElementById('pc2'),{{type:'bar',data:{{labels:lb,datasets:[{{data:pd,backgroundColor:'{p}33',borderColor:'{p}',borderWidth:2,borderRadius:4}}]}},options:co}});
+new Chart(document.getElementById('vc2'),{{type:'line',data:{{labels:lb,datasets:[{{data:vd2,backgroundColor:'#00cc6618',borderColor:'#00cc66',borderWidth:2,pointBackgroundColor:'#00cc66',tension:.4,fill:true}}]}},options:co}});
+</script>'''
     return base(c,username,theme)
 
 # ━━━ SETTINGS + 2FA ━━━
