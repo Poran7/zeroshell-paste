@@ -271,7 +271,7 @@ def base(content,title="ZeroShell",theme='cyan'):
         nav_r='<a href="/login">Login</a><a href="/register" class="btn btn-p">Register</a>'
         mob_r='<a href="/login">Login</a><a href="/register">Register</a>'
     p_color=THEMES.get(theme,'#00f5ff')
-    tg_help='https://t.me/ZeroShell_Store'
+    tg_help='https://t.me/ZeroShell_help'
     return f'''<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="{p_color}">
