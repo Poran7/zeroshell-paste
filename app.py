@@ -560,7 +560,7 @@ def all_users():
   return base(c,"Premium Members",session.get('theme','cyan'))
 
 # ━━━ AUTO VERIFY ━━━
-PAYMENT_ADDRS={'USDT':'TBWUnddB2J5cckALZenPo6KQJwLzysEohE','BTC':'15DXasH25UnsD29tqS5wZwgkALr5hvYiVS','ETH':'0x4382fd71bd5a4d921c27d851764d8c76ccc5d143','LTC':'LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf'}
+PAYMENT_ADDRS={'USDT':'TBWUnddB2J5cckALZenPo6KQJwLzysEohE','BTC':'15DXasH25UnsD29tqS5wZwgkALr5hvYiVS','ETH':'0xd4c1ff57a77ce3a7b99ff96b410f05501b84b838','LTC':'LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf'}
 PLAN_PRICES={'1month':10,'6month':40,'1year':80}
 
 def auto_verify_tx(coin,tx_hash,plan):
@@ -734,7 +734,7 @@ def premium_page():
   cards=''.join(plan_card(p) for p in plans)
 
   # coin cards
-  COINS=[('USDT','TBWUnddB2J5cckALZenPo6KQJwLzysEohE','TRC20 (Tron)','#26a17b'),('BTC','15DXasH25UnsD29tqS5wZwgkALr5hvYiVS','Bitcoin','#f7931a'),('ETH','0x4382fd71bd5a4d921c27d851764d8c76ccc5d143','ERC20','#627eea'),('LTC','LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf','Litecoin','#bfbbbb')]
+  COINS=[('USDT','TBWUnddB2J5cckALZenPo6KQJwLzysEohE','TRC20 (Tron)','#26a17b'),('BTC','15DXasH25UnsD29tqS5wZwgkALr5hvYiVS','Bitcoin','#f7931a'),('ETH','0xd4c1ff57a77ce3a7b99ff96b410f05501b84b838','ERC20','#627eea'),('LTC','LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf','Litecoin','#bfbbbb')]
   coin_cards=''.join(
     '<div style="background:var(--card);border:1px solid var(--border);border-top:3px solid '+cl+';border-radius:12px;padding:16px;text-align:center;">'
     '<div style="font-size:14px;font-weight:800;color:'+cl+';margin-bottom:10px;">'+cn+'</div>'
@@ -953,10 +953,15 @@ def home():
  </div>
 </div>
 </div>'''
-  c=f'''<div style="text-align:center;padding:32px 20px 18px;">
-<div style="font-family:'Share Tech Mono',monospace;font-size:clamp(22px,5vw,44px);color:var(--p);text-shadow:0 0 28px var(--p)44;letter-spacing:4px;margin-bottom:6px;">⚡ ZEROSHELL</div>
-<div style="color:var(--dim);font-size:12px;letter-spacing:3px;margin-bottom:18px;">PASTE · SHARE · TRACK · v7.5</div>
-<a href="/new" class="btn btn-p" style="font-size:15px;padding:10px 32px;border-radius:8px;">+ New Paste</a>
+  c=f'''<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;margin-top:16px;">
+<a href="https://t.me/ZeroShell_Store" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:16px 20px;background:linear-gradient(135deg,#1a1f2e,#0d1520);border:1px solid #229ed944;border-radius:12px;text-decoration:none;transition:all .2s;" onmouseover="this.style.borderColor='#229ed9';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#229ed944';this.style.transform='translateY(0)'">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="#229ed9"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.94z"/></svg>
+<div><div style="font-size:14px;font-weight:800;color:#fff;">ZeroShell Store</div><div style="font-size:11px;color:#229ed9;">t.me/ZeroShell_Store</div></div>
+</a>
+<a href="https://t.me/ZeroShell_Shop" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:16px 20px;background:linear-gradient(135deg,#1a1f2e,#0d1520);border:1px solid #229ed944;border-radius:12px;text-decoration:none;transition:all .2s;" onmouseover="this.style.borderColor='#229ed9';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#229ed944';this.style.transform='translateY(0)'">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="#229ed9"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.94z"/></svg>
+<div><div style="font-size:14px;font-weight:800;color:#fff;">ZeroShell Shop</div><div style="font-size:11px;color:#229ed9;">t.me/ZeroShell_Shop</div></div>
+</a>
 </div>
 <div style="margin-bottom:12px;display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
 <span style="font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-right:3px;">Filter:</span>
