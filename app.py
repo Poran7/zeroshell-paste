@@ -28,6 +28,7 @@ def init_db():
     CREATE TABLE IF NOT EXISTS revisions(id INTEGER PRIMARY KEY AUTOINCREMENT,paste_id INTEGER,content TEXT,title TEXT,syntax TEXT,editor_id INTEGER,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
     CREATE TABLE IF NOT EXISTS email_verifications(id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER,token TEXT,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
     CREATE TABLE IF NOT EXISTS rate_limits(id INTEGER PRIMARY KEY AUTOINCREMENT,ip TEXT,action TEXT,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+    CREATE TABLE IF NOT EXISTS payment_requests(id INTEGER PRIMARY KEY AUTOINCREMENT,user_id INTEGER,plan TEXT,coin TEXT,tx_hash TEXT,amount TEXT,status TEXT DEFAULT 'pending',created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
     """)
     safe=[("users","avatar","TEXT DEFAULT '👤'"),("users","theme","TEXT DEFAULT 'cyan'"),("users","is_admin","INTEGER DEFAULT 0"),("users","email","TEXT DEFAULT ''"),("users","totp_secret","TEXT DEFAULT ''"),("users","totp_enabled","INTEGER DEFAULT 0"),("users","api_key","TEXT DEFAULT ''"),("pastes","password","TEXT DEFAULT ''"),("pastes","pinned","INTEGER DEFAULT 0"),("pastes","expires_at","TIMESTAMP DEFAULT NULL"),("pastes","tags","TEXT DEFAULT ''"),("pastes","likes","INTEGER DEFAULT 0"),("pastes","dislikes","INTEGER DEFAULT 0"),("pastes","ai_summary","TEXT DEFAULT ''"),("users","is_premium","INTEGER DEFAULT 0"),("users","premium_note","TEXT DEFAULT ''"),("users","email_verified","INTEGER DEFAULT 0")]
     for t,c,d in safe:
@@ -573,6 +574,233 @@ def all_users():
 {rows or empty}
 </div>'''
     return base(c,"Premium Members",session.get('theme','cyan'))
+
+# ━━━ ANNOUNCEMENTS ━━━
+@app.route('/announcements')
+def announcements():
+    db=get_db()
+    ads=db.execute("SELECT * FROM ads WHERE active=1 ORDER BY created_at DESC").fetchall()
+    db.close()
+    def _ann(a):
+        return f'''<div class="card">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+  <div style="font-size:16px;font-weight:700;color:var(--p);">📢 {a["title"]}</div>
+  <div style="font-size:10px;color:var(--dim);font-family:monospace;flex-shrink:0;">{a["created_at"][:10]}</div>
+</div>
+<div style="font-size:13px;color:var(--text);margin:8px 0;line-height:1.6;">{a["content"]}</div>
+{f'<a href="{a["url"]}" target="_blank" class="btn btn-o" style="font-size:12px;">🔗 Learn more</a>' if a["url"] else ""}
+</div>'''
+    rows=''.join(_ann(a) for a in ads) or '<div style="text-align:center;padding:48px;color:var(--dim);"><div style="font-size:48px;margin-bottom:10px;">📢</div><div>No announcements yet.</div></div>'
+    c=f'''<div style="max-width:760px;margin:0 auto;">
+<div style="text-align:center;padding:24px 0 20px;">
+  <div style="font-size:36px;margin-bottom:8px;">📢</div>
+  <div style="font-size:24px;font-weight:800;color:var(--text);">Announcements</div>
+  <div style="font-size:13px;color:var(--dim);margin-top:4px;">Latest news from ZeroShell</div>
+</div>
+{rows}
+<div style="text-align:center;margin-top:20px;">
+  <a href="https://t.me/ZeroShell_help" target="_blank" class="btn" style="background:#229ed9;color:#fff;border-color:#229ed9;font-size:13px;padding:8px 20px;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="white" style="flex-shrink:0;"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
+    Join Telegram for live updates
+  </a>
+</div>
+</div>'''
+    return base(c,"Announcements",session.get('theme','cyan'))
+
+
+# ━━━ PREMIUM PAGE ━━━
+@app.route('/premium')
+def premium_page():
+    uid=session.get('user_id')
+    is_prem=False; uname=session.get('user')
+    if uid:
+        db=get_db(); u=db.execute("SELECT is_premium FROM users WHERE id=?",(uid,)).fetchone(); db.close()
+        is_prem = u and u['is_premium']
+    db2=get_db(); prem_count=db2.execute("SELECT COUNT(*) FROM users WHERE is_premium=1").fetchone()[0]; db2.close()
+
+    plans=[
+        {"label":"MONTHLY","price":"$10","dur":"1 Month","color":"#3fb950","icon":"&#127807;"},
+        {"label":"SEMI-ANNUAL","price":"$40","dur":"6 Months","color":"#00f5ff","icon":"&#9889;","pop":True},
+        {"label":"ANNUAL","price":"$80","dur":"1 Year","color":"#ffd700","icon":"&#128081;"},
+    ]
+
+    def plan_card(p):
+        pop=p.get('pop',False)
+        pop_b='<div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--p);color:#000;font-size:10px;font-weight:800;padding:3px 14px;border-radius:99px;white-space:nowrap;">MOST POPULAR</div>' if pop else ''
+        bdr=f'border-color:{p["color"]};box-shadow:0 0 20px {p["color"]}22;' if pop else ''
+        return f'<div style="position:relative;background:var(--card);border:2px solid var(--border);{bdr}border-radius:14px;padding:24px 18px;text-align:center;">{pop_b}<div style="font-size:32px;">{p["icon"]}</div><div style="font-size:11px;font-weight:800;color:{p["color"]};letter-spacing:2px;margin:6px 0;">{p["label"]}</div><div style="font-size:40px;font-weight:800;color:var(--text);">{p["price"]}</div><div style="font-size:12px;color:var(--dim);margin-bottom:14px;">{p["dur"]}</div><a href="#pay" class="btn" style="width:100%;justify-content:center;background:{p["color"]};color:#000;border-color:{p["color"]};font-weight:800;padding:9px;display:flex;">Pay Now</a></div>'
+
+    cards=''.join(plan_card(p) for p in plans)
+
+    # crypto address cards
+    coins=[
+        ('USDT','TJgbQGqqmTxd1ijjvrMAE1miYHUJhoFT1c','TRC20 (Tron)','#26a17b'),
+        ('BTC','1N39KVvVK8itaGr7odbrTKnBdbwt4n7PoY','Bitcoin','#f7931a'),
+        ('ETH','0xd4c1ff57a77ce3a7b99ff96b410f05501b84b838','ERC20 (Ethereum)','#627eea'),
+        ('LTC','LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf','Litecoin','#bfbbbb'),
+    ]
+    def coin_card(coin,addr,net,col):
+        qr_url=f"https://api.qrserver.com/v1/create-qr-code/?size=160x160&data={addr}"
+        short=addr[:12]+'...'+addr[-8:]
+        return f'''<div style="background:var(--card);border:1px solid var(--border);border-top:3px solid {col};border-radius:12px;padding:18px;text-align:center;">
+<div style="font-size:13px;font-weight:800;color:{col};letter-spacing:1px;margin-bottom:10px;">{coin}</div>
+<img src="{qr_url}" style="width:130px;height:130px;border-radius:8px;background:#fff;padding:6px;margin-bottom:10px;" loading="lazy">
+<div style="font-size:10px;color:var(--dim);margin-bottom:6px;">{net}</div>
+<div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-family:monospace;font-size:11px;color:var(--text);word-break:break-all;margin-bottom:8px;">{addr}</div>
+<button onclick="copyAddr('{addr}',this)" style="background:{col};color:#000;border:none;border-radius:6px;padding:6px 16px;font-size:12px;font-weight:700;cursor:pointer;width:100%;">Copy Address</button>
+</div>'''
+
+    coin_cards=''.join(coin_card(*c) for c in coins)
+
+    login_note='' if uid else '<div style="background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.3);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#ffd700;"><a href="/login" style="color:#ffd700;font-weight:700;">Login</a> করুন, তারপর payment submit করুন।</div>'
+
+    already=''
+    if is_prem:
+        already='<div style="background:linear-gradient(135deg,rgba(255,215,0,.1),rgba(255,140,0,.08));border:1px solid rgba(255,215,0,.3);border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;"><div style="font-size:28px;">&#128142;</div><div><div style="font-weight:700;color:#ffd700;font-size:15px;">আপনি ইতিমধ্যে Premium Member!</div><div style="font-size:12px;color:var(--dim);">আপনার সাপোর্টের জন্য ধন্যবাদ &#10084;</div></div></div>'
+
+    pay_form=''
+    if uid and not is_prem:
+        pay_form=f'''<div class="card" id="pay" style="margin-bottom:16px;">
+<div style="font-size:15px;font-weight:700;color:var(--p);margin-bottom:14px;">&#128196; Payment Submit করুন</div>
+<div style="font-size:13px;color:var(--dim);margin-bottom:14px;line-height:1.7;">উপরের যেকোনো address এ payment করুন, তারপর নিচে Transaction Hash দিন। Admin verify করার পরে আপনি <strong style="color:#ffd700;">Premium</strong> পাবেন।</div>
+<form method="POST" action="/submit-payment">
+<div class="fg">
+  <label>Plan</label>
+  <select name="plan" style="margin-bottom:0;">
+    <option value="1month">Monthly - $10</option>
+    <option value="6month">Semi-Annual - $40</option>
+    <option value="1year">Annual - $80</option>
+  </select>
+</div>
+<div class="fg">
+  <label>Coin</label>
+  <select name="coin">
+    <option value="USDT">USDT (TRC20)</option>
+    <option value="BTC">BTC (Bitcoin)</option>
+    <option value="ETH">ETH (ERC20)</option>
+    <option value="LTC">LTC (Litecoin)</option>
+  </select>
+</div>
+<div class="fg">
+  <label>Transaction Hash / TxID</label>
+  <input type="text" name="tx_hash" placeholder="0x... অথবা যেকোনো TxID" required>
+  <div style="font-size:11px;color:var(--dim);margin-top:4px;">Blockchain explorer থেকে transaction hash copy করুন</div>
+</div>
+<button type="submit" class="btn btn-p" style="width:100%;justify-content:center;padding:10px;font-size:14px;">Submit Payment Request &#128200;</button>
+</form>
+</div>'''
+
+    c=f'''<div style="max-width:960px;margin:0 auto;">
+<div style="text-align:center;padding:28px 20px 20px;">
+  <div style="font-size:48px;margin-bottom:8px;">&#128142;</div>
+  <div style="font-size:28px;font-weight:800;color:var(--text);">ZeroShell Premium</div>
+  <div style="font-size:13px;color:var(--dim);margin-top:5px;">{prem_count} active premium members</div>
+</div>
+{already}
+<!-- Plans -->
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;">
+{cards}
+</div>
+<!-- Crypto payment section -->
+<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:14px;">&#128176; Crypto দিয়ে Pay করুন</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;">
+{coin_cards}
+</div>
+{login_note}
+{pay_form}
+<!-- Steps -->
+<div class="card">
+<div style="font-size:14px;font-weight:700;color:var(--p);margin-bottom:12px;">&#128204; কীভাবে Premium নেবেন?</div>
+<div style="display:flex;flex-direction:column;gap:9px;">
+<div style="display:flex;gap:12px;"><div style="width:26px;height:26px;background:var(--p);color:#000;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;">1</div><div style="font-size:13px;padding-top:4px;">উপর থেকে plan বেছে নিন এবং যেকোনো coin এ payment করুন</div></div>
+<div style="display:flex;gap:12px;"><div style="width:26px;height:26px;background:var(--p);color:#000;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;">2</div><div style="font-size:13px;padding-top:4px;">Address copy করুন বা QR scan করুন, সঠিক amount পাঠান</div></div>
+<div style="display:flex;gap:12px;"><div style="width:26px;height:26px;background:var(--p);color:#000;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;">3</div><div style="font-size:13px;padding-top:4px;">Transaction Hash নিয়ে নিচের form এ submit করুন</div></div>
+<div style="display:flex;gap:12px;"><div style="width:26px;height:26px;background:var(--p);color:#000;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;">4</div><div style="font-size:13px;padding-top:4px;">Admin verify করলে আপনি <strong style="color:#ffd700;">&#128142; Premium badge</strong> পাবেন!</div></div>
+</div>
+</div>
+</div>
+<script>
+function copyAddr(addr,btn){{
+  navigator.clipboard.writeText(addr).then(()=>{{
+    var orig=btn.textContent; btn.textContent="Copied!"; btn.style.background="#3fb950";
+    setTimeout(()=>{{btn.textContent=orig;btn.style.background=btn.dataset.col||"#26a17b";}},1500);
+  }});
+}}
+</script>
+<style>@media(max-width:700px){{
+  .plan-grid,.coin-grid{{grid-template-columns:1fr!important;}}
+}}</style>'''
+    return base(c,"Premium",session.get('theme','cyan'))
+
+# ━━━ SUBMIT PAYMENT ━━━
+@app.route('/submit-payment',methods=['POST'])
+def submit_payment():
+    if not session.get('user_id'):
+        flash('Login করুন','error'); return redirect('/login')
+    uid=session['user_id']; plan=request.form.get('plan',''); coin=request.form.get('coin',''); tx=request.form.get('tx_hash','').strip()
+    if not tx: flash('Transaction hash দিন','error'); return redirect('/premium')
+    db=get_db()
+    db.execute("INSERT INTO payment_requests(user_id,plan,coin,tx_hash,status) VALUES(?,?,?,?,'pending')",(uid,plan,coin,tx))
+    # notify all admins
+    admins=db.execute("SELECT id FROM users WHERE is_admin=1").fetchall()
+    for a in admins:
+        db.execute("INSERT INTO notifications(user_id,message,link) VALUES(?,?,?)",(a['id'],f"New payment request from {session.get('user')}: {coin} {plan}",'/admin/payments'))
+    db.commit(); db.close()
+    flash('Payment request submitted! Admin verify করার পরে আপনি Premium পাবেন ✅','success')
+    return redirect('/premium')
+
+# ━━━ ADMIN PAYMENTS ━━━
+@app.route('/admin/payments')
+def admin_payments():
+    if not session.get('is_admin'): return redirect('/')
+    db=get_db()
+    reqs=db.execute("SELECT pr.*,u.username,u.email FROM payment_requests pr JOIN users u ON pr.user_id=u.id ORDER BY pr.created_at DESC").fetchall()
+    db.close()
+    def _row(r):
+        status_col={'pending':'#ffd700','approved':'#3fb950','rejected':'#f85149'}.get(r['status'],'#7d8590')
+        btns=''
+        if r['status']=='pending':
+            btns=f'<a href="/admin/approve-payment/{r["id"]}" class="btn btn-g" style="font-size:11px;padding:4px 10px;">Approve</a> <a href="/admin/reject-payment/{r["id"]}" class="btn btn-r" style="font-size:11px;padding:4px 10px;">Reject</a>'
+        return f'<tr><td>{r["id"]}</td><td><a href="/profile/{r["username"]}" style="color:var(--p);">{r["username"]}</a></td><td style="color:#ffd700;">{r["plan"]}</td><td style="color:{status_col};">{r["coin"]}</td><td style="font-family:monospace;font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;" title="{r["tx_hash"]}">{r["tx_hash"][:20]}...</td><td style="color:{status_col};font-weight:700;">{r["status"].upper()}</td><td>{r["created_at"][:16]}</td><td>{btns}</td></tr>'
+    rows=''.join(_row(r) for r in reqs) or '<tr><td colspan=8 style="text-align:center;color:var(--dim);padding:24px;">No payment requests</td></tr>'
+    c=f'''<div style="max-width:1000px;margin:0 auto;">
+<div style="font-size:22px;font-weight:800;margin-bottom:18px;">&#128200; Payment Requests</div>
+<div class="card" style="overflow-x:auto;">
+<table class="at">
+<thead><tr><th>ID</th><th>User</th><th>Plan</th><th>Coin</th><th>TX Hash</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+<tbody>{rows}</tbody>
+</table>
+</div>
+</div>'''
+    return base(c,"Payments",session.get('theme','cyan'))
+
+@app.route('/admin/approve-payment/<int:rid>')
+def approve_payment(rid):
+    if not session.get('is_admin'): return redirect('/')
+    db=get_db()
+    req=db.execute("SELECT * FROM payment_requests WHERE id=?",(rid,)).fetchone()
+    if req:
+        db.execute("UPDATE payment_requests SET status='approved' WHERE id=?",(rid,))
+        db.execute("UPDATE users SET is_premium=1,premium_note=? WHERE id=?",(req['plan'],req['user_id']))
+        db.execute("INSERT INTO notifications(user_id,message,link) VALUES(?,?,?)",(req['user_id'],'&#128142; আপনার Premium approved হয়েছে! Welcome to Premium!','/premium'))
+        db.commit()
+        flash(f'Payment approved! User is now Premium ✅','success')
+    db.close()
+    return redirect('/admin/payments')
+
+@app.route('/admin/reject-payment/<int:rid>')
+def reject_payment(rid):
+    if not session.get('is_admin'): return redirect('/')
+    db=get_db()
+    req=db.execute("SELECT * FROM payment_requests WHERE id=?",(rid,)).fetchone()
+    if req:
+        db.execute("UPDATE payment_requests SET status='rejected' WHERE id=?",(rid,))
+        db.execute("INSERT INTO notifications(user_id,message,link) VALUES(?,?,?)",(req['user_id'],'&#10060; আপনার payment request reject হয়েছে। সঠিক TX hash দিয়ে আবার try করুন।','/premium'))
+        db.commit()
+        flash('Payment rejected','success')
+    db.close()
+    return redirect('/admin/payments')
+
 
 # ━━━ ANNOUNCEMENTS ━━━
 @app.route('/announcements')
