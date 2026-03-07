@@ -290,8 +290,9 @@ def base(content,title="ZeroShell",theme='cyan'):
     <a href="/tags">Tags</a>
     <a href="/diff">Diff</a>
     <a href="/api/v1/docs">API</a>
+    <a href="/premium" style="color:#ffd700;font-weight:700;">&#128142; Premium</a>
     <a href="/pastes">📝 Pastes</a>
-    <a href="/users">👥 Users</a>
+    <a href="/users" style="color:#ffd700;font-weight:700;">💎 VIP</a>
     <a href="/announcements">📢 News</a>
     <a href="https://t.me/ZeroShell_help" target="_blank" style="color:#229ed9;font-weight:700;">📢 Telegram</a>
   </div>
@@ -311,8 +312,9 @@ def base(content,title="ZeroShell",theme='cyan'):
   <a href="/tags">🏷️ Tags</a>
   <a href="/diff">🔀 Diff</a>
   <a href="/api/v1/docs">🌐 API</a>
+  <a href="/premium" style="color:#ffd700;font-weight:700;">&#128142; Premium</a>
   <a href="/pastes">📝 All Pastes</a>
-  <a href="/users">👥 All Users</a>
+  <a href="/users">💎 Premium Members</a>
   <a href="/announcements">📢 Announcements</a>
   <a href="https://t.me/ZeroShell_help" target="_blank" style="color:#229ed9;">📢 Telegram</a>
   {mob_r}
@@ -498,43 +500,75 @@ def all_pastes():
 </div>'''
     return base(c,"All Pastes",session.get('theme','cyan'))
 
-# ━━━ ALL USERS ━━━
+# ━━━ ALL USERS (Premium Only) ━━━
 @app.route('/users')
 def all_users():
     q=request.args.get('q','').strip()
     db=get_db()
     if q:
-        users=db.execute("SELECT u.*,COUNT(p.id) as pc FROM users u LEFT JOIN pastes p ON u.id=p.user_id WHERE u.username LIKE ? GROUP BY u.id ORDER BY u.total_views DESC",(f'%{q}%',)).fetchall()
+        users=db.execute(
+            "SELECT u.*,COUNT(p.id) as pc FROM users u LEFT JOIN pastes p ON u.id=p.user_id WHERE u.is_premium=1 AND u.username LIKE ? GROUP BY u.id ORDER BY u.total_views DESC",
+            (f'%{q}%',)).fetchall()
     else:
-        users=db.execute("SELECT u.*,COUNT(p.id) as pc FROM users u LEFT JOIN pastes p ON u.id=p.user_id GROUP BY u.id ORDER BY u.total_views DESC").fetchall()
+        users=db.execute(
+            "SELECT u.*,COUNT(p.id) as pc FROM users u LEFT JOIN pastes p ON u.id=p.user_id WHERE u.is_premium=1 GROUP BY u.id ORDER BY u.total_views DESC"
+        ).fetchall()
+    total_all=db.execute("SELECT COUNT(*) FROM users").fetchone()[0]
     db.close()
+
     def _row(u):
-        return f'''<div style="display:flex;align-items:center;gap:13px;padding:11px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;transition:all .15s;" onmouseover="this.style.borderColor='var(--p)'" onmouseout="this.style.borderColor='var(--border)'">
-<div style="font-size:26px;flex-shrink:0;">{u["avatar"] or "👤"}</div>
+        note=u['premium_note'] or 'Premium'
+        bio_short=u['bio'][:50]+'...' if u['bio'] and len(u['bio'])>50 else (u['bio'] or '')
+        tg_link=f'<a href="https://t.me/{u["telegram"]}" target="_blank" style="color:#229ed9;font-size:11px;text-decoration:none;">✈️ @{u["telegram"]}</a>' if u['telegram'] else ''
+        return f'''<div style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--bg);border:1px solid var(--border);border-left:3px solid #ffd700;border-radius:10px;margin-bottom:8px;transition:all .15s;" onmouseover="this.style.transform='translateX(3px)'" onmouseout="this.style.transform='translateX(0)'">
+<div style="font-size:30px;flex-shrink:0;filter:drop-shadow(0 0 6px #ffd70066);">{u["avatar"] or "👤"}</div>
 <div style="flex:1;min-width:0;">
-  <a href="/profile/{u["username"]}" style="color:var(--p);text-decoration:none;font-size:15px;font-weight:700;">{u["username"]}</a>
-  <div style="font-size:11px;color:var(--dim);">{u["bio"][:40]+"..." if u["bio"] and len(u["bio"])>40 else u["bio"] or ""}</div>
+  <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:3px;">
+    <a href="/profile/{u["username"]}" style="color:var(--p);text-decoration:none;font-size:16px;font-weight:700;">{u["username"]}</a>
+    <span style="background:linear-gradient(135deg,#ffd700,#ff8c00);color:#000;border-radius:99px;padding:1px 9px;font-size:10px;font-weight:800;letter-spacing:.5px;">💎 {note}</span>
+    {"<span style='background:rgba(63,185,80,.15);color:#3fb950;border:1px solid rgba(63,185,80,.3);border-radius:99px;padding:1px 7px;font-size:10px;font-weight:700;'>✅ Verified</span>" if u["email_verified"] else ""}
+  </div>
+  <div style="font-size:12px;color:var(--dim);margin-bottom:3px;">{bio_short}</div>
+  {tg_link}
 </div>
 <div style="text-align:right;flex-shrink:0;">
-  <div style="font-family:monospace;color:var(--green);font-size:13px;font-weight:700;">👁 {u["total_views"]}</div>
-  <div style="font-size:11px;color:var(--dim);">{u["pc"]} pastes</div>
+  <div style="font-family:monospace;color:var(--green);font-size:14px;font-weight:700;">👁 {u["total_views"]}</div>
+  <div style="font-size:11px;color:var(--dim);margin-top:2px;">{u["pc"]} pastes</div>
 </div>
 </div>'''
-    rows=''.join(_row(u) for u in users) or '<div style="text-align:center;color:var(--dim);padding:24px;">No users found!</div>'
-    c=f'''<div style="max-width:700px;margin:0 auto;">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+
+    rows=''.join(_row(u) for u in users)
+    empty=f'''<div style="text-align:center;padding:60px 20px;">
+<div style="font-size:56px;margin-bottom:14px;">💎</div>
+<div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:6px;">No Premium Members Yet</div>
+<div style="font-size:13px;color:var(--dim);">Premium members will appear here.</div>
+</div>'''
+
+    c=f'''<div style="max-width:760px;margin:0 auto;">
+<!-- Header -->
+<div style="text-align:center;padding:28px 0 20px;">
+  <div style="font-size:40px;margin-bottom:8px;">💎</div>
+  <div style="font-size:26px;font-weight:800;color:var(--text);">Premium Members</div>
+  <div style="font-size:13px;color:var(--dim);margin-top:5px;">{len(users)} premium · {total_all} total members</div>
+</div>
+<!-- Search -->
+<form method="GET" style="display:flex;gap:8px;margin-bottom:18px;">
+  <input name="q" value="{q}" placeholder="Search premium members..." style="flex:1;">
+  <button type="submit" class="btn btn-o">🔍 Search</button>
+</form>
+<!-- Premium badge info -->
+<div style="background:linear-gradient(135deg,rgba(255,215,0,.08),rgba(255,140,0,.06));border:1px solid rgba(255,215,0,.25);border-radius:10px;padding:12px 16px;margin-bottom:18px;display:flex;align-items:center;gap:10px;">
+  <span style="font-size:20px;">💎</span>
   <div>
-    <div style="font-size:22px;font-weight:800;color:var(--text);">👥 All Users</div>
-    <div style="font-size:12px;color:var(--dim);margin-top:2px;">{len(users)} members</div>
+    <div style="font-size:13px;font-weight:700;color:#ffd700;">Premium Members</div>
+    <div style="font-size:11px;color:var(--dim);">Admin দ্বারা verified বিশেষ সদস্য। Premium badge পেতে Admin এর সাথে যোগাযোগ করুন।</div>
   </div>
-  <form method="GET" style="display:flex;gap:7px;">
-    <input name="q" value="{q}" placeholder="Search users..." style="width:180px;padding:6px 10px;font-size:13px;">
-    <button type="submit" class="btn btn-o" style="font-size:12px;">🔍</button>
-  </form>
+  <a href="https://t.me/ZeroShell_help" target="_blank" class="btn" style="background:#229ed9;color:#fff;border-color:#229ed9;font-size:12px;margin-left:auto;flex-shrink:0;">✈️ Contact</a>
 </div>
-<div>{rows}</div>
+<!-- List -->
+{rows or empty}
 </div>'''
-    return base(c,"Users",session.get('theme','cyan'))
+    return base(c,"Premium Members",session.get('theme','cyan'))
 
 # ━━━ ANNOUNCEMENTS ━━━
 @app.route('/announcements')
@@ -567,6 +601,65 @@ def announcements():
 </div>
 </div>'''
     return base(c,"Announcements",session.get('theme','cyan'))
+
+
+# ━━━ PREMIUM PAGE ━━━
+@app.route('/premium')
+def premium_page():
+    uid=session.get('user_id')
+    is_prem=False
+    if uid:
+        db=get_db(); u=db.execute("SELECT is_premium,premium_note FROM users WHERE id=?",(uid,)).fetchone(); db.close()
+        is_prem = u and u['is_premium']
+    db2=get_db(); prem_count=db2.execute("SELECT COUNT(*) FROM users WHERE is_premium=1").fetchone()[0]; db2.close()
+
+    plans=[
+        {"label":"MONTHLY","price":"$10","period":"/ month","dur":"1 Month","color":"#3fb950","icon":"plant","perks":["VIP Badge","Listed in /users","Priority support","All features"]},
+        {"label":"SEMI-ANNUAL","price":"$40","period":"/ 6 months","dur":"6 Months","color":"#00f5ff","icon":"bolt","perks":["VIP Badge","Listed in /users","Priority support","All features","Save $20"],"pop":True},
+        {"label":"ANNUAL","price":"$80","period":"/ year","dur":"1 Year","color":"#ffd700","icon":"crown","perks":["VIP Badge","Listed in /users","Priority support","All features","Save $40","Gold Crown Badge"]},
+    ]
+
+    def plan_card(p):
+        pop=p.get('pop',False)
+        pop_badge='<div style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--p);color:#000;font-size:10px;font-weight:800;padding:3px 14px;border-radius:99px;letter-spacing:1px;white-space:nowrap;">MOST POPULAR</div>' if pop else ''
+        ic={'plant':'&#127807;','bolt':'&#9889;','crown':'&#128081;'}[p['icon']]
+        perks=''.join(f'<div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13px;"><span style="color:{p["color"]};">&#10003;</span> {k}</div>' for k in p['perks'])
+        bdr=f'border-color:{p["color"]};box-shadow:0 0 24px {p["color"]}22;' if pop else ''
+        return f'<div style="position:relative;background:var(--card);border:2px solid var(--border);{bdr}border-radius:14px;padding:28px 22px;text-align:center;transition:transform .2s;" onmouseover="this.style.transform=\'translateY(-4px)\'" onmouseout="this.style.transform=\'translateY(0)\'">{pop_badge}<div style="font-size:36px;margin-bottom:8px;">{ic}</div><div style="font-size:11px;font-weight:800;color:{p["color"]};letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">{p["label"]}</div><div style="font-size:44px;font-weight:800;color:var(--text);line-height:1;">{p["price"]}</div><div style="font-size:12px;color:var(--dim);margin-bottom:18px;">{p["period"]}</div><div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:18px;text-align:left;">{perks}</div><a href="https://t.me/ZeroShell_help" target="_blank" class="btn" style="width:100%;justify-content:center;background:{p["color"]};color:#000;border-color:{p["color"]};font-weight:800;font-size:13px;padding:10px;display:flex;">Get {p["dur"]}</a></div>'
+
+    cards=''.join(plan_card(p) for p in plans)
+
+    already=''
+    if is_prem:
+        already='<div style="background:linear-gradient(135deg,rgba(255,215,0,.1),rgba(255,140,0,.08));border:1px solid rgba(255,215,0,.3);border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;"><div style="font-size:26px;">&#128142;</div><div><div style="font-weight:700;color:#ffd700;font-size:14px;">You are a Premium Member!</div><div style="font-size:12px;color:var(--dim);">Thank you for your support!</div></div></div>'
+
+    steps=''.join(f'<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;"><div style="width:26px;height:26px;background:var(--p);color:#000;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;">{i+1}</div><div style="font-size:13px;color:var(--text);padding-top:4px;">{s}</div></div>' for i,s in enumerate([
+        'Telegram এ message করুন: <a href="https://t.me/ZeroShell_help" target="_blank" style="color:#229ed9;font-weight:700;">@ZeroShell_help</a>',
+        'আপনার <strong>username</strong> এবং কোন plan নিতে চান সেটা বলুন',
+        'Payment confirm হলে Admin আপনাকে Premium badge দেবে'
+    ]))
+
+    c=f'''<div style="max-width:920px;margin:0 auto;">
+<div style="text-align:center;padding:32px 20px 24px;">
+  <div style="font-size:52px;margin-bottom:10px;">&#128142;</div>
+  <div style="font-size:30px;font-weight:800;color:var(--text);margin-bottom:6px;">ZeroShell Premium</div>
+  <div style="font-size:14px;color:var(--dim);">{prem_count} active premium members &middot; Get your VIP badge!</div>
+</div>
+{already}
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:28px;">
+{cards}
+</div>
+<div class="card" style="margin-bottom:16px;">
+  <div style="font-size:14px;font-weight:700;color:var(--p);margin-bottom:14px;">How to Get Premium</div>
+  {steps}
+</div>
+<div style="text-align:center;padding:10px 0 24px;">
+  <a href="https://t.me/ZeroShell_help" target="_blank" class="btn" style="background:#229ed9;color:#fff;border-color:#229ed9;font-size:15px;padding:12px 32px;border-radius:10px;font-weight:700;">Contact on Telegram</a>
+  <div style="font-size:11px;color:var(--dim);margin-top:8px;">Usually responds within a few hours</div>
+</div>
+</div>
+<style>@media(max-width:680px){{.plan-grid{{grid-template-columns:1fr!important;}}}}</style>'''
+    return base(c,"Premium",session.get('theme','cyan'))
 
 @app.route('/toggle-mode')
 def toggle_mode():
