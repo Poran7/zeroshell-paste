@@ -290,6 +290,10 @@ def base(content,title="ZeroShell",theme='cyan'):
     <a href="/tags">Tags</a>
     <a href="/diff">Diff</a>
     <a href="/api/v1/docs">API</a>
+    <a href="/pastes">📝 Pastes</a>
+    <a href="/users">👥 Users</a>
+    <a href="/announcements">📢 News</a>
+    <a href="https://t.me/ZeroShell_help" target="_blank" style="color:#229ed9;font-weight:700;">📢 Telegram</a>
   </div>
   <div style="display:flex;gap:5px;align-items:center;margin-left:auto;flex-shrink:0;">
     {nav_r}
@@ -307,6 +311,10 @@ def base(content,title="ZeroShell",theme='cyan'):
   <a href="/tags">🏷️ Tags</a>
   <a href="/diff">🔀 Diff</a>
   <a href="/api/v1/docs">🌐 API</a>
+  <a href="/pastes">📝 All Pastes</a>
+  <a href="/users">👥 All Users</a>
+  <a href="/announcements">📢 Announcements</a>
+  <a href="https://t.me/ZeroShell_help" target="_blank" style="color:#229ed9;">📢 Telegram</a>
   {mob_r}
   <a href="https://t.me/ZeroShell_help" target="_blank">✈️ Telegram Help</a>
   <a href="/toggle-mode">{mi} Dark/Light</a>
@@ -449,6 +457,117 @@ def api_delete_paste(slug):
     return jsonify({'deleted':True})
 
 # ━━━ TOGGLE MODE ━━━
+
+# ━━━ ALL PASTES ━━━
+@app.route('/pastes')
+def all_pastes():
+    page=max(1,int(request.args.get('page',1)))
+    per=20; offset=(page-1)*per
+    syntax=request.args.get('syntax','')
+    db=get_db()
+    if syntax:
+        pastes=db.execute("SELECT p.*,u.username,u.avatar FROM pastes p LEFT JOIN users u ON p.user_id=u.id WHERE p.visibility='public' AND p.syntax=? ORDER BY p.created_at DESC LIMIT ? OFFSET ?",(syntax,per,offset)).fetchall()
+        total=db.execute("SELECT COUNT(*) FROM pastes WHERE visibility='public' AND syntax=?",(syntax,)).fetchone()[0]
+    else:
+        pastes=db.execute("SELECT p.*,u.username,u.avatar FROM pastes p LEFT JOIN users u ON p.user_id=u.id WHERE p.visibility='public' ORDER BY p.created_at DESC LIMIT ? OFFSET ?",(per,offset)).fetchall()
+        total=db.execute("SELECT COUNT(*) FROM pastes WHERE visibility='public'").fetchone()[0]
+    db.close()
+    pages=max(1,(total+per-1)//per)
+    pl=''.join(f'<a href="/paste/{p["slug"]}" class="pi"><div><div class="pt">{"🔒 " if p["password"] else ""}{p["title"]}</div><div class="pm">{p["avatar"] or "👤"} {p["username"] or "Anon"} · {p["created_at"][:10]} · {p["syntax"]}</div></div><div class="pv">👁 {p["views"]}</div></a>' for p in pastes if not is_expired(p)) or '<div style="text-align:center;color:var(--dim);padding:24px;">No pastes!</div>'
+    syn_opts='<option value="">All</option>'+"".join(f'<option value="{s}" {"selected" if syntax==s else ""}>{s}</option>' for s in ["python","javascript","html","css","bash","json","sql","text"])
+    # pagination
+    prev_btn=f'<a href="/pastes?page={page-1}&syntax={syntax}" class="btn btn-o">← Prev</a>' if page>1 else ''
+    next_btn=f'<a href="/pastes?page={page+1}&syntax={syntax}" class="btn btn-o">Next →</a>' if page<pages else ''
+    c=f'''<div style="max-width:860px;margin:0 auto;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+  <div>
+    <div style="font-size:22px;font-weight:800;color:var(--text);">📝 All Pastes</div>
+    <div style="font-size:12px;color:var(--dim);margin-top:2px;">{total} public pastes</div>
+  </div>
+  <form method="GET" style="display:flex;gap:7px;align-items:center;">
+    <select name="syntax" style="width:auto;padding:6px 10px;font-size:13px;">{syn_opts}</select>
+    <button type="submit" class="btn btn-o" style="font-size:12px;">Filter</button>
+  </form>
+</div>
+<div class="card">{pl}</div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
+  <div>{prev_btn}</div>
+  <span style="font-size:12px;color:var(--dim);">Page {page} / {pages}</span>
+  <div>{next_btn}</div>
+</div>
+</div>'''
+    return base(c,"All Pastes",session.get('theme','cyan'))
+
+# ━━━ ALL USERS ━━━
+@app.route('/users')
+def all_users():
+    q=request.args.get('q','').strip()
+    db=get_db()
+    if q:
+        users=db.execute("SELECT u.*,COUNT(p.id) as pc FROM users u LEFT JOIN pastes p ON u.id=p.user_id WHERE u.username LIKE ? GROUP BY u.id ORDER BY u.total_views DESC",(f'%{q}%',)).fetchall()
+    else:
+        users=db.execute("SELECT u.*,COUNT(p.id) as pc FROM users u LEFT JOIN pastes p ON u.id=p.user_id GROUP BY u.id ORDER BY u.total_views DESC").fetchall()
+    db.close()
+    def _row(u):
+        return f'''<div style="display:flex;align-items:center;gap:13px;padding:11px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;transition:all .15s;" onmouseover="this.style.borderColor='var(--p)'" onmouseout="this.style.borderColor='var(--border)'">
+<div style="font-size:26px;flex-shrink:0;">{u["avatar"] or "👤"}</div>
+<div style="flex:1;min-width:0;">
+  <a href="/profile/{u["username"]}" style="color:var(--p);text-decoration:none;font-size:15px;font-weight:700;">{u["username"]}</a>
+  <div style="font-size:11px;color:var(--dim);">{u["bio"][:40]+"..." if u["bio"] and len(u["bio"])>40 else u["bio"] or ""}</div>
+</div>
+<div style="text-align:right;flex-shrink:0;">
+  <div style="font-family:monospace;color:var(--green);font-size:13px;font-weight:700;">👁 {u["total_views"]}</div>
+  <div style="font-size:11px;color:var(--dim);">{u["pc"]} pastes</div>
+</div>
+</div>'''
+    rows=''.join(_row(u) for u in users) or '<div style="text-align:center;color:var(--dim);padding:24px;">No users found!</div>'
+    c=f'''<div style="max-width:700px;margin:0 auto;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+  <div>
+    <div style="font-size:22px;font-weight:800;color:var(--text);">👥 All Users</div>
+    <div style="font-size:12px;color:var(--dim);margin-top:2px;">{len(users)} members</div>
+  </div>
+  <form method="GET" style="display:flex;gap:7px;">
+    <input name="q" value="{q}" placeholder="Search users..." style="width:180px;padding:6px 10px;font-size:13px;">
+    <button type="submit" class="btn btn-o" style="font-size:12px;">🔍</button>
+  </form>
+</div>
+<div>{rows}</div>
+</div>'''
+    return base(c,"Users",session.get('theme','cyan'))
+
+# ━━━ ANNOUNCEMENTS ━━━
+@app.route('/announcements')
+def announcements():
+    db=get_db()
+    ads=db.execute("SELECT * FROM ads WHERE active=1 ORDER BY created_at DESC").fetchall()
+    db.close()
+    def _ann(a):
+        return f'''<div class="card">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+  <div style="font-size:16px;font-weight:700;color:var(--p);">📢 {a["title"]}</div>
+  <div style="font-size:10px;color:var(--dim);font-family:monospace;flex-shrink:0;">{a["created_at"][:10]}</div>
+</div>
+<div style="font-size:13px;color:var(--text);margin:8px 0;line-height:1.6;">{a["content"]}</div>
+{f'<a href="{a["url"]}" target="_blank" class="btn btn-o" style="font-size:12px;">🔗 Learn more</a>' if a["url"] else ""}
+</div>'''
+    rows=''.join(_ann(a) for a in ads) or '<div style="text-align:center;padding:48px;color:var(--dim);"><div style="font-size:48px;margin-bottom:10px;">📢</div><div>No announcements yet.</div></div>'
+    c=f'''<div style="max-width:760px;margin:0 auto;">
+<div style="text-align:center;padding:24px 0 20px;">
+  <div style="font-size:36px;margin-bottom:8px;">📢</div>
+  <div style="font-size:24px;font-weight:800;color:var(--text);">Announcements</div>
+  <div style="font-size:13px;color:var(--dim);margin-top:4px;">Latest news from ZeroShell</div>
+</div>
+{rows}
+<div style="text-align:center;margin-top:20px;">
+  <a href="https://t.me/ZeroShell_help" target="_blank" class="btn" style="background:#229ed9;color:#fff;border-color:#229ed9;font-size:13px;padding:8px 20px;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="white" style="flex-shrink:0;"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
+    Join Telegram for live updates
+  </a>
+</div>
+</div>'''
+    return base(c,"Announcements",session.get('theme','cyan'))
+
 @app.route('/toggle-mode')
 def toggle_mode():
     session['light_mode']=not session.get('light_mode',False)
