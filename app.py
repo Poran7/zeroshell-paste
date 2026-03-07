@@ -560,7 +560,7 @@ def all_users():
   return base(c,"Premium Members",session.get('theme','cyan'))
 
 # ━━━ AUTO VERIFY ━━━
-PAYMENT_ADDRS={'USDT':'TJgbQGqqmTxd1ijjvrMAE1miYHUJhoFT1c','BTC':'15DXasH25UnsD29tqS5wZwgkALr5hvYiVS','ETH':'0xd4c1ff57a77ce3a7b99ff96b410f05501b84b838','LTC':'LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf'}
+PAYMENT_ADDRS={'USDT':'TBWUnddB2J5cckALZenPo6KQJwLzysEohE','BTC':'1N39KVvVK8itaGr7odbrTKnBdbwt4n7PoY','ETH':'0x4382fd71bd5a4d921c27d851764d8c76ccc5d143','LTC':'LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf'}
 PLAN_PRICES={'1month':10,'6month':40,'1year':80}
 
 def auto_verify_tx(coin,tx_hash,plan):
@@ -718,8 +718,8 @@ def premium_page():
 
   plans=[
     {"label":"3 MONTHS","price":"$20","period":"/ 3 months","dur":"3 Months","color":"#3fb950","icon":"plant","perks":["VIP Badge","10 posts/day","Glowing pastes","5 profile links","Premium banner"]},
-    {"label":"6 MONTHS","price":"$30","period":"/ 6 months","dur":"6 Months","color":"#00f5ff","icon":"bolt","perks":["VIP Badge","10 posts/day","Glowing pastes","5 profile links","Premium banner","Save $10!"],"pop":True},
-    {"label":"1 YEAR","price":"$50","period":"/ year","dur":"1 Year","color":"#ffd700","icon":"crown","perks":["VIP Badge","10 posts/day","Glowing pastes","5 profile links","Premium banner","Best Value!"]},
+    {"label":"6 MONTHS","price":"$40","period":"/ 6 months","dur":"6 Months","color":"#00f5ff","icon":"bolt","perks":["VIP Badge","10 posts/day","Glowing pastes","5 profile links","Premium banner","Save $20!"],"pop":True},
+    {"label":"1 YEAR","price":"$60","period":"/ year","dur":"1 Year","color":"#ffd700","icon":"crown","perks":["VIP Badge","10 posts/day","Glowing pastes","5 profile links","Premium banner","Best Value!"]},
     {"label":"LIFETIME","price":"$80","period":"/ forever","dur":"Lifetime","color":"#ff4d94","icon":"star","perks":["VIP Badge FOREVER","10 posts/day","Glowing pastes","5 profile links","Premium banner","Never pay again!"]},
   ]
 
@@ -734,7 +734,7 @@ def premium_page():
   cards=''.join(plan_card(p) for p in plans)
 
   # coin cards
-  COINS=[('USDT','TJgbQGqqmTxd1ijjvrMAE1miYHUJhoFT1c','TRC20 (Tron)','#26a17b'),('BTC','15DXasH25UnsD29tqS5wZwgkALr5hvYiVS','Bitcoin','#f7931a'),('ETH','0xd4c1ff57a77ce3a7b99ff96b410f05501b84b838','ERC20','#627eea'),('LTC','LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf','Litecoin','#bfbbbb')]
+  COINS=[('USDT','TBWUnddB2J5cckALZenPo6KQJwLzysEohE','TRC20 (Tron)','#26a17b'),('BTC','1N39KVvVK8itaGr7odbrTKnBdbwt4n7PoY','Bitcoin','#f7931a'),('ETH','0x4382fd71bd5a4d921c27d851764d8c76ccc5d143','ERC20','#627eea'),('LTC','LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf','Litecoin','#bfbbbb')]
   coin_cards=''.join(
     '<div style="background:var(--card);border:1px solid var(--border);border-top:3px solid '+cl+';border-radius:12px;padding:16px;text-align:center;">'
     '<div style="font-size:14px;font-weight:800;color:'+cl+';margin-bottom:10px;">'+cn+'</div>'
@@ -758,9 +758,8 @@ def premium_page():
 <div><label style="color:rgba(255,255,255,.6);font-size:11px;font-weight:700;display:block;margin-bottom:5px;letter-spacing:.5px;">PLAN</label>
 <select name="plan" style="background:#0a1525;border:1px solid rgba(0,245,255,.25);border-radius:8px;color:#fff;padding:9px 12px;width:100%;font-size:13px;outline:none;">
 <option value="3month">3 Months - $20</option>
-<option value="6month">6 Months - $30</option>
-<option value="1year">1 Year - $50</option>
-<option value="lifetime">Lifetime - $80</option>
+<option value="6month">6 Months - $40</option>
+<option value="1year">1 Year - $60</option>
 </select></div>
 <div><label style="color:rgba(255,255,255,.6);font-size:11px;font-weight:700;display:block;margin-bottom:5px;letter-spacing:.5px;">COIN</label>
 <select name="coin" style="background:#0a1525;border:1px solid rgba(0,245,255,.25);border-radius:8px;color:#fff;padding:9px 12px;width:100%;font-size:13px;outline:none;">
