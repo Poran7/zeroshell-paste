@@ -560,7 +560,7 @@ def all_users():
   return base(c,"Premium Members",session.get('theme','cyan'))
 
 # ━━━ AUTO VERIFY ━━━
-PAYMENT_ADDRS={'USDT':'TBWUnddB2J5cckALZenPo6KQJwLzysEohE','BTC':'1N39KVvVK8itaGr7odbrTKnBdbwt4n7PoY','ETH':'0x4382fd71bd5a4d921c27d851764d8c76ccc5d143','LTC':'LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf'}
+PAYMENT_ADDRS={'USDT':'TBWUnddB2J5cckALZenPo6KQJwLzysEohE','BTC':'15DXasH25UnsD29tqS5wZwgkALr5hvYiVS','ETH':'0x4382fd71bd5a4d921c27d851764d8c76ccc5d143','LTC':'LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf'}
 PLAN_PRICES={'1month':10,'6month':40,'1year':80}
 
 def auto_verify_tx(coin,tx_hash,plan):
@@ -734,7 +734,7 @@ def premium_page():
   cards=''.join(plan_card(p) for p in plans)
 
   # coin cards
-  COINS=[('USDT','TBWUnddB2J5cckALZenPo6KQJwLzysEohE','TRC20 (Tron)','#26a17b'),('BTC','1N39KVvVK8itaGr7odbrTKnBdbwt4n7PoY','Bitcoin','#f7931a'),('ETH','0x4382fd71bd5a4d921c27d851764d8c76ccc5d143','ERC20','#627eea'),('LTC','LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf','Litecoin','#bfbbbb')]
+  COINS=[('USDT','TBWUnddB2J5cckALZenPo6KQJwLzysEohE','TRC20 (Tron)','#26a17b'),('BTC','15DXasH25UnsD29tqS5wZwgkALr5hvYiVS','Bitcoin','#f7931a'),('ETH','0x4382fd71bd5a4d921c27d851764d8c76ccc5d143','ERC20','#627eea'),('LTC','LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf','Litecoin','#bfbbbb')]
   coin_cards=''.join(
     '<div style="background:var(--card);border:1px solid var(--border);border-top:3px solid '+cl+';border-radius:12px;padding:16px;text-align:center;">'
     '<div style="font-size:14px;font-weight:800;color:'+cl+';margin-bottom:10px;">'+cn+'</div>'
@@ -934,9 +934,13 @@ def home():
   for _u in _top:
     top_html+=f'<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);"><span style="font-size:17px;">{_u["avatar"] or "👤"}</span><a href="/profile/{_u["username"]}" style="color:var(--p);text-decoration:none;font-size:13px;font-weight:600;flex:1;">{_u["username"]}</a><span style="font-family:monospace;color:var(--green);font-size:12px;">👁 {_u["total_views"]}</span></div>'
   tl_html=''
+  tl_html_v=''
   for t in ALL_TAGS:
     active_class='active' if tag==t else ''
     tl_html+=f'<a href="/?tag={t}" class="tag {active_class}">{t}</a>'
+    bc='var(--p)' if tag==t else 'transparent'
+    tc='var(--p)' if tag==t else 'var(--t)'
+    tl_html_v+=f'<a href="/?tag={t}" style="display:block;padding:6px 14px;color:{tc};text-decoration:none;font-size:12px;font-weight:600;border-left:3px solid {bc};">{t}</a>'
   sidebar=f'''<div style="display:flex;flex-direction:column;gap:12px;width:280px;flex-shrink:0;">
 <div class="card" style="padding:14px;">
  <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:.7px;text-transform:uppercase;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border);"> Trending Pastes</div>
@@ -975,16 +979,43 @@ def home():
 <div><div style="font-size:14px;font-weight:800;color:#fff;">ZeroShell Shop</div><div style="font-size:11px;color:#229ed9;">t.me/ZeroShell_Shop</div></div>
 </a>
 </div>
-<div style="margin-bottom:12px;display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
-<span style="font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-right:3px;">Filter:</span>
-{tl_html}
+<div style="display:grid;grid-template-columns:200px 1fr 280px;gap:16px;align-items:start;">
+
+<!-- LEFT SIDEBAR -->
+<div style="display:flex;flex-direction:column;gap:8px;position:sticky;top:70px;">
+  <a href="/new" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 14px;background:var(--p);color:#000;border-radius:9px;font-weight:800;font-size:14px;text-decoration:none;transition:opacity .15s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+    + New Paste
+  </a>
+  <div style="background:var(--card);border:1px solid var(--bd);border-radius:10px;overflow:hidden;margin-top:4px;">
+    <div style="font-size:10px;font-weight:800;color:var(--s);text-transform:uppercase;letter-spacing:1px;padding:10px 14px 6px;">Menu</div>
+    <a href="/" style="display:flex;align-items:center;gap:8px;padding:9px 14px;color:var(--t);text-decoration:none;font-size:13px;font-weight:600;border-left:3px solid {"var(--p)" if not tag else "transparent"};background:{"rgba(128,128,128,.06)" if not tag else "transparent"};" onmouseover="this.style.background='rgba(128,128,128,.06)'" onmouseout="this.style.background='{"rgba(128,128,128,.06)" if not tag else "transparent"}'">
+      <span style="font-size:15px;">&#9776;</span> Home
+    </a>
+    <a href="/pastes" style="display:flex;align-items:center;gap:8px;padding:9px 14px;color:var(--t);text-decoration:none;font-size:13px;font-weight:600;" onmouseover="this.style.background='rgba(128,128,128,.06)'" onmouseout="this.style.background='transparent'">
+      <span style="font-size:15px;">&#128196;</span> Archive
+    </a>
+    <a href="/leaderboard" style="display:flex;align-items:center;gap:8px;padding:9px 14px;color:var(--t);text-decoration:none;font-size:13px;font-weight:600;" onmouseover="this.style.background='rgba(128,128,128,.06)'" onmouseout="this.style.background='transparent'">
+      <span style="font-size:15px;">&#127942;</span> Board
+    </a>
+    <a href="/search" style="display:flex;align-items:center;gap:8px;padding:9px 14px;color:var(--t);text-decoration:none;font-size:13px;font-weight:600;" onmouseover="this.style.background='rgba(128,128,128,.06)'" onmouseout="this.style.background='transparent'">
+      <span style="font-size:15px;">&#128269;</span> Search
+    </a>
+    {'<a href="/bookmarks" style="display:flex;align-items:center;gap:8px;padding:9px 14px;color:var(--t);text-decoration:none;font-size:13px;font-weight:600;"><span style="font-size:15px;">&#9733;</span> Saved</a>' if session.get("user_id") else ""}
+  </div>
+  <div style="background:var(--card);border:1px solid var(--bd);border-radius:10px;overflow:hidden;">
+    <div style="font-size:10px;font-weight:800;color:var(--s);text-transform:uppercase;letter-spacing:1px;padding:10px 14px 6px;">Filter</div>
+    {tl_html_v}
+  </div>
 </div>
-<div style="display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start;">
- <div>
-  <div style="font-size:12px;font-weight:700;color:var(--dim);letter-spacing:.7px;text-transform:uppercase;margin-bottom:10px;">Recent Pastes{f" · #{tag}" if tag else ""}</div>
+
+<!-- MAIN CONTENT -->
+<div>
+  <div style="font-size:12px;font-weight:700;color:var(--s);letter-spacing:.7px;text-transform:uppercase;margin-bottom:10px;">Recent Pastes{f" · #{tag}" if tag else ""}</div>
   {pl}
- </div>
- {sidebar}
+</div>
+
+<!-- RIGHT SIDEBAR -->
+{sidebar}
 </div>'''
   return base(c,"Home",session.get('theme','cyan'))
 
