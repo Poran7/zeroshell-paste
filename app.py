@@ -165,15 +165,15 @@ def style(theme='cyan',light=False):
 body{{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;}}
 body::before{{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(128,128,128,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(128,128,128,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}}
 .wrap{{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:20px;}}
-nav{{background:{nav_bg};border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200;backdrop-filter:blur(16px);}}
-.logo{{font-family:'Share Tech Mono',monospace;font-size:16px;color:var(--p);text-decoration:none;letter-spacing:2px;text-shadow:0 0 12px {p}55;font-weight:700;flex-shrink:0;}}
-.nav-links{{display:flex;gap:2px;align-items:center;flex:1;flex-wrap:nowrap;overflow:hidden;}}
-.nav-links a{{color:var(--text);text-decoration:none;font-size:13px;font-weight:500;padding:5px 9px;border-radius:6px;transition:all .15s;white-space:nowrap;opacity:.8;}}
-.nav-links a:hover{{opacity:1;background:rgba(128,128,128,.1);}}
-.hamburger{{display:none;flex-direction:column;gap:4px;cursor:pointer;padding:6px;border-radius:6px;border:1px solid var(--border);background:transparent;}}
-.hamburger span{{display:block;width:18px;height:2px;background:var(--text);border-radius:2px;}}
-.mob-menu{{display:none;flex-direction:column;gap:2px;padding:8px 12px 14px;background:{nav_bg};border-bottom:1px solid var(--border);}}
-.mob-menu a{{color:var(--text);text-decoration:none;font-size:14px;font-weight:500;padding:9px 12px;border-radius:6px;}}
+nav{{background:{nav_bg};border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200;backdrop-filter:blur(20px);}}
+.logo{{font-family:'Share Tech Mono',monospace;font-size:20px;color:var(--p);text-decoration:none;letter-spacing:3px;text-shadow:0 0 18px {p}66;font-weight:700;flex-shrink:0;}}
+.nav-links{{display:flex;gap:4px;align-items:center;flex:1;flex-wrap:nowrap;overflow:hidden;margin-left:8px;}}
+.nav-links a{{color:var(--text);text-decoration:none;font-size:14px;font-weight:600;padding:6px 12px;border-radius:8px;transition:all .15s;white-space:nowrap;}}
+.nav-links a:hover{{background:rgba(128,128,128,.12);color:var(--p);}}
+.hamburger{{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:7px;border-radius:7px;border:1px solid var(--border);background:transparent;}}
+.hamburger span{{display:block;width:20px;height:2px;background:var(--text);border-radius:2px;}}
+.mob-menu{{display:none;flex-direction:column;gap:3px;padding:10px 14px 16px;background:{nav_bg};border-bottom:1px solid var(--border);}}
+.mob-menu a{{color:var(--text);text-decoration:none;font-size:15px;font-weight:600;padding:10px 14px;border-radius:8px;}}
 .mob-menu a:hover{{background:rgba(128,128,128,.08);}}
 @media(max-width:800px){{.nav-links{{display:none;}}.hamburger{{display:flex;}}.mob-menu.open{{display:flex;}}}}
 #toast{{position:fixed;bottom:22px;right:18px;z-index:9999;padding:10px 18px;border-radius:9px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;background:var(--card);border:1px solid var(--p);color:var(--p);box-shadow:0 4px 20px {p}33;transform:translateY(60px);opacity:0;transition:all .3s cubic-bezier(.4,0,.2,1);pointer-events:none;}}
@@ -270,10 +270,10 @@ def base(content,title="ZeroShell",theme='cyan'):
     mi='☀️' if not light else '🌙'
     if u:
         adm='<a href="/admin">⚙️</a>' if session.get('is_admin') else ''
-        nav_r=f'<a href="/notifications" title="Notifications">🔔{nb}</a><a href="/feed" title="Feed">📊</a><a href="/profile/{u}" style="display:inline-flex;align-items:center;gap:5px;"><span>{session.get("avatar","👤")}</span><strong style="color:var(--p);">{u}</strong></a>{adm}<a href="/logout" style="color:var(--dim);">Logout</a>'
+        nav_r=f'<a href="/notifications" title="Notifications" style="font-size:16px;">🔔{nb}</a><a href="/profile/{u}" style="display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--p);font-size:14px;"><span style="font-size:18px;">{session.get("avatar","👤")}</span>{u}</a>{adm}<a href="/logout" style="color:var(--s);font-size:13px;">Logout</a>'
         mob_r=f'<a href="/notifications">🔔 Notifs{nb}</a><a href="/feed">📊 Feed</a><a href="/profile/{u}">{session.get("avatar","👤")} {u}</a><a href="/settings">⚙️ Settings</a>{"<a href=/admin>👑 Admin</a>" if session.get("is_admin") else ""}<a href="/logout">🚪 Logout</a>'
     else:
-        nav_r='<a href="/login" style="font-weight:600;">Login</a><a href="/register" class="btn btn-p" style="padding:5px 14px;">Register</a>'
+        nav_r='<a href="/login" style="font-weight:600;font-size:14px;">Login</a><a href="/register" class="btn btn-p" style="padding:7px 18px;font-size:14px;border-radius:8px;">Register</a>'
         mob_r='<a href="/login">Login</a><a href="/register">Register</a>'
     p_color=THEMES.get(theme,'#00f5ff')
     return f'''<!DOCTYPE html><html lang="en"><head>
@@ -285,14 +285,14 @@ def base(content,title="ZeroShell",theme='cyan'):
 <title>{title} - ZeroShell</title>{s}</head><body>
 {TOAST_JS}{MOB_JS}{PWA_JS}
 <nav>
-<div style="max-width:1280px;margin:0 auto;padding:0 20px;height:54px;display:flex;align-items:center;gap:6px;">
+<div style="max-width:1280px;margin:0 auto;padding:0 24px;height:62px;display:flex;align-items:center;gap:8px;">
   <a class="logo" href="/">⚡ ZeroShell</a>
   <div class="nav-links">
     <a href="/">Home</a>
     <a href="/leaderboard">🏆</a>
     <a href="/api/v1/docs">API</a>
-    <a href="/premium" style="color:#ffd700;font-weight:700;">Premium</a>
-    <a href="https://t.me/ZeroShell_help" target="_blank" style="color:#229ed9;font-weight:700;">Telegram</a>
+    <a href="/premium" style="background:linear-gradient(135deg,#ffd700,#ff8c00);color:#000;font-weight:800;border-radius:8px;padding:6px 14px;font-size:13px;">&#11088; Premium</a>
+    <a href="https://t.me/ZeroShell_help" target="_blank" style="background:#229ed9;color:#fff;font-weight:700;border-radius:8px;padding:6px 14px;font-size:13px;">Telegram</a>
   </div>
   <div style="display:flex;gap:5px;align-items:center;margin-left:auto;flex-shrink:0;">
     {nav_r}
