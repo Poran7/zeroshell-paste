@@ -81,7 +81,7 @@ def get_badge(views, p30):
     return ('Newcomer','⭐','#8899aa')
 
 THEMES = {'cyan':'#00f5ff','red':'#ff2d55','green':'#00ff88','gold':'#ffd60a','purple':'#bf5af2','blue':'#2979ff'}
-AVATARS = ['👤','🔥','💀','🤖','👾','🦊','🐉','🎭','🔮','🦅','🐺']
+AVATARS = ['👤','⚡','🔥','💀','🤖','👾','🦊','🐉','🎭','🔮','🦅','🐺']
 EXPIRE_OPTS = [('','Never'),('1h','1 Hour'),('1d','1 Day'),('1w','1 Week'),('1m','1 Month')]
 
 def style(theme='cyan'):
