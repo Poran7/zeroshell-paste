@@ -1,5 +1,5 @@
 """ZeroShell v7.0 - PWA + API + 2FA + AI + Diff + Analytics"""
-import os,hashlib,secrets,json,re,hmac,struct,time,base64
+import os,hashlib,secrets,json,re,hmac,struct,time,base64,urllib.request,urllib.parse
 from datetime import datetime,timedelta
 from flask import Flask,request,redirect,session,flash,get_flashed_messages,Response,jsonify
 
@@ -559,6 +559,42 @@ def all_users():
 </div>'''
     return base(c,"Premium Members",session.get('theme','cyan'))
 
+# ━━━ AUTO VERIFY ━━━
+PAYMENT_ADDRS={'USDT':'TJgbQGqqmTxd1ijjvrMAE1miYHUJhoFT1c','BTC':'15DXasH25UnsD29tqS5wZwgkALr5hvYiVS','ETH':'0xd4c1ff57a77ce3a7b99ff96b410f05501b84b838','LTC':'LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf'}
+PLAN_PRICES={'1month':10,'6month':40,'1year':80}
+
+def auto_verify_tx(coin,tx_hash,plan):
+    import urllib.request,json as _j
+    addr=PAYMENT_ADDRS.get(coin,''); expected=PLAN_PRICES.get(plan,0)
+    try:
+        if coin=='USDT':
+            url=f"https://apilist.tronscanapi.com/api/transaction-info?hash={tx_hash}"
+            with urllib.request.urlopen(urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0'}),timeout=8) as r:
+                d=_j.loads(r.read())
+                for t in d.get('trc20TransferInfo',[]):
+                    if t.get('to_address','').lower()==addr.lower():
+                        amt=float(t.get('amount_str','0'))/1e6
+                        if amt>=expected*0.95: return True,amt
+        elif coin=='BTC':
+            url=f"https://blockstream.info/api/tx/{tx_hash}"
+            with urllib.request.urlopen(urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0'}),timeout=8) as r:
+                d=_j.loads(r.read())
+                for out in d.get('vout',[]):
+                    if out.get('scriptpubkey_address','').lower()==addr.lower(): return True,out.get('value',0)/1e8
+        elif coin=='ETH':
+            url=f"https://api.etherscan.io/api?module=proxy&action=eth_getTransactionByHash&txhash={tx_hash}"
+            with urllib.request.urlopen(urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0'}),timeout=8) as r:
+                d=_j.loads(r.read()); res=d.get('result',{})
+                if res and res.get('to','').lower()==addr.lower(): return True,int(res.get('value','0x0'),16)/1e18
+        elif coin=='LTC':
+            url=f"https://api.blockcypher.com/v1/ltc/main/txs/{tx_hash}"
+            with urllib.request.urlopen(urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0'}),timeout=8) as r:
+                d=_j.loads(r.read())
+                for out in d.get('outputs',[]):
+                    if addr in out.get('addresses',[]): return True,out.get('value',0)/1e8
+    except: pass
+    return False,0
+
 # ━━━ SUBMIT PAYMENT ━━━
 @app.route('/submit-payment',methods=['POST'])
 def submit_payment():
@@ -567,13 +603,21 @@ def submit_payment():
     uid=session['user_id']; plan=request.form.get('plan',''); coin=request.form.get('coin',''); tx=request.form.get('tx_hash','').strip()
     if not tx: flash('Transaction hash দিন','error'); return redirect('/premium')
     db=get_db()
-    db.execute("INSERT INTO payment_requests(user_id,plan,coin,tx_hash,status) VALUES(?,?,?,?,'pending')",(uid,plan,coin,tx))
-    # notify all admins
-    admins=db.execute("SELECT id FROM users WHERE is_admin=1").fetchall()
-    for a in admins:
-        db.execute("INSERT INTO notifications(user_id,message,link) VALUES(?,?,?)",(a['id'],f"New payment request from {session.get('user')}: {coin} {plan}",'/admin/payments'))
-    db.commit(); db.close()
-    flash('Payment request submitted! Admin verify করার পরে আপনি Premium পাবেন ✅','success')
+    dup=db.execute("SELECT id FROM payment_requests WHERE tx_hash=?",(tx,)).fetchone()
+    if dup: db.close(); flash('এই TX আগেই submit হয়েছে!','error'); return redirect('/premium')
+    verified,amount=auto_verify_tx(coin,tx,plan)
+    if verified:
+        db.execute("INSERT INTO payment_requests(user_id,plan,coin,tx_hash,status,amount) VALUES(?,?,?,?,'approved',?)",(uid,plan,coin,tx,str(amount)))
+        db.execute("UPDATE users SET is_premium=1,premium_note=? WHERE id=?",(plan,uid))
+        db.execute("INSERT INTO notifications(user_id,message,link) VALUES(?,?,?)",(uid,'Payment verified! আপনি এখন Premium Member!','/premium'))
+        db.commit(); db.close()
+        flash('Payment auto-verified! আপনি এখন Premium! ✅','success')
+    else:
+        db.execute("INSERT INTO payment_requests(user_id,plan,coin,tx_hash,status) VALUES(?,?,?,?,'pending')",(uid,plan,coin,tx))
+        for a in db.execute("SELECT id FROM users WHERE is_admin=1").fetchall():
+            db.execute("INSERT INTO notifications(user_id,message,link) VALUES(?,?,?)",(a['id'],f"Payment verify করুন: {session.get('user')} ({coin} {plan})",'/admin/payments'))
+        db.commit(); db.close()
+        flash('Submitted! Blockchain verify হচ্ছে... Admin confirm করবে শীঘ্রই ⏳','success')
     return redirect('/premium')
 
 # ━━━ ADMIN PAYMENTS ━━━
@@ -673,9 +717,9 @@ def premium_page():
     db2=get_db(); prem_count=db2.execute("SELECT COUNT(*) FROM users WHERE is_premium=1").fetchone()[0]; db2.close()
 
     plans=[
-        {"label":"MONTHLY","price":"$10","period":"/ month","dur":"1 Month","color":"#3fb950","icon":"plant","perks":["VIP Badge","Listed in /users","Priority support","All features"]},
-        {"label":"SEMI-ANNUAL","price":"$40","period":"/ 6 months","dur":"6 Months","color":"#00f5ff","icon":"bolt","perks":["VIP Badge","Listed in /users","Priority support","All features","Save $20"],"pop":True},
-        {"label":"ANNUAL","price":"$80","period":"/ year","dur":"1 Year","color":"#ffd700","icon":"crown","perks":["VIP Badge","Listed in /users","Priority support","All features","Save $40","Gold Crown Badge"]},
+        {"label":"MONTHLY","price":"$10","period":"/ month","dur":"1 Month","color":"#3fb950","icon":"plant","perks":["VIP Badge on profile","Premium Members list","Priority support","All site features"]},
+        {"label":"SEMI-ANNUAL","price":"$40","period":"/ 6 months","dur":"6 Months","color":"#00f5ff","icon":"bolt","perks":["VIP Badge on profile","Premium Members list","Priority support","All site features","Save $20!"],"pop":True},
+        {"label":"ANNUAL","price":"$80","period":"/ year","dur":"1 Year","color":"#ffd700","icon":"crown","perks":["VIP Badge on profile","Premium Members list","Priority support","All site features","Save $40!","Gold Crown Badge"]},
     ]
 
     def plan_card(p):
@@ -690,34 +734,63 @@ def premium_page():
 
     already=''
     if is_prem:
-        already='<div style="background:linear-gradient(135deg,rgba(255,215,0,.1),rgba(255,140,0,.08));border:1px solid rgba(255,215,0,.3);border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;"><div style="font-size:26px;">&#128142;</div><div><div style="font-weight:700;color:#ffd700;font-size:14px;">You are a Premium Member!</div><div style="font-size:12px;color:var(--dim);">Thank you for your support!</div></div></div>'
+        already='<div style="background:linear-gradient(135deg,#3d2b00,#5a3f00);border:2px solid #ffd700;border-radius:14px;padding:18px 22px;margin-bottom:24px;display:flex;align-items:center;gap:16px;"><div style="font-size:36px;">&#128081;</div><div><div style="font-weight:800;color:#ffd700;font-size:17px;">You are a Premium Member!</div><div style="font-size:13px;color:rgba(255,255,255,.7);margin-top:3px;">Thank you for your support!</div></div></div>'
 
-    steps=''.join(f'<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;"><div style="width:26px;height:26px;background:var(--p);color:#000;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;">{i+1}</div><div style="font-size:13px;color:var(--text);padding-top:4px;">{s}</div></div>' for i,s in enumerate([
-        'Telegram এ message করুন: <a href="https://t.me/ZeroShell_help" target="_blank" style="color:#229ed9;font-weight:700;">@ZeroShell_help</a>',
-        'আপনার <strong>username</strong> এবং কোন plan নিতে চান সেটা বলুন',
-        'Payment confirm হলে Admin আপনাকে Premium badge দেবে'
-    ]))
-
-    c=f'''<div style="max-width:920px;margin:0 auto;">
-<div style="text-align:center;padding:32px 20px 24px;">
-  <div style="font-size:52px;margin-bottom:10px;">&#128142;</div>
-  <div style="font-size:30px;font-weight:800;color:var(--text);margin-bottom:6px;">ZeroShell Premium</div>
-  <div style="font-size:14px;color:var(--dim);">{prem_count} active premium members &middot; Get your VIP badge!</div>
+    pay_form=''
+    if uid and not is_prem:
+        pay_form='''<div id="pay" style="background:linear-gradient(135deg,#0a1520,#0d2035);border:1px solid rgba(0,245,255,.2);border-radius:16px;padding:24px;margin-bottom:22px;">
+<div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:6px;">Submit Payment</div>
+<div style="font-size:13px;color:rgba(255,255,255,.55);margin-bottom:18px;">Address এ pay করুন, TxID দিন, auto verify হবে!</div>
+<form method="POST" action="/submit-payment">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+<div><label style="color:rgba(255,255,255,.6);font-size:11px;font-weight:700;display:block;margin-bottom:5px;letter-spacing:.5px;">PLAN</label>
+<select name="plan" style="background:#0a1525;border:1px solid rgba(0,245,255,.25);border-radius:8px;color:#fff;padding:9px 12px;width:100%;font-size:13px;outline:none;">
+<option value="1month">Monthly - $10</option>
+<option value="6month">Semi-Annual - $40</option>
+<option value="1year">Annual - $80</option>
+</select></div>
+<div><label style="color:rgba(255,255,255,.6);font-size:11px;font-weight:700;display:block;margin-bottom:5px;letter-spacing:.5px;">COIN</label>
+<select name="coin" style="background:#0a1525;border:1px solid rgba(0,245,255,.25);border-radius:8px;color:#fff;padding:9px 12px;width:100%;font-size:13px;outline:none;">
+<option value="USDT">USDT (TRC20)</option>
+<option value="BTC">BTC (Bitcoin)</option>
+<option value="ETH">ETH (ERC20)</option>
+<option value="LTC">LTC (Litecoin)</option>
+</select></div>
+</div>
+<div style="margin-bottom:14px;"><label style="color:rgba(255,255,255,.6);font-size:11px;font-weight:700;display:block;margin-bottom:5px;letter-spacing:.5px;">TRANSACTION HASH / TxID</label>
+<input type="text" name="tx_hash" placeholder="Paste your TxID here..." required style="background:#0a1525;border:1px solid rgba(0,245,255,.25);border-radius:8px;color:#fff;padding:10px 14px;width:100%;font-size:13px;outline:none;">
+<div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:5px;">Blockchain explorer থেকে TxID copy করুন</div>
+</div>
+<button type="submit" style="width:100%;padding:13px;background:linear-gradient(135deg,#00c8ff,#0066cc);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.5px;">Verify &amp; Get Premium</button>
+</form></div>'''
+    login_note='' if uid else '<div style="background:#1a2030;border:1px solid #ffd70044;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#ffd700;"><a href="/login" style="color:#ffd700;font-weight:800;">Login করুন</a> তারপর payment submit করুন।</div>'
+    c=f'''<div style="max-width:980px;margin:0 auto;">
+<div style="text-align:center;padding:36px 20px 28px;background:linear-gradient(180deg,rgba(255,215,0,.07) 0%,transparent 100%);border-radius:20px;margin-bottom:28px;">
+<div style="font-size:13px;font-weight:800;color:#ffd700;letter-spacing:4px;text-transform:uppercase;margin-bottom:10px;">EXCLUSIVE</div>
+<div style="font-size:36px;font-weight:900;color:#fff;margin-bottom:8px;">ZeroShell Premium</div>
+<div style="font-size:15px;color:rgba(255,255,255,.5);">{prem_count} active premium members</div>
 </div>
 {already}
-<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:28px;">
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:32px;align-items:start;">
 {cards}
 </div>
-<div class="card" style="margin-bottom:16px;">
-  <div style="font-size:14px;font-weight:700;color:var(--p);margin-bottom:14px;">How to Get Premium</div>
-  {steps}
+<div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:16px;">Crypto দিয়ে Pay করুন</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;">
+{coin_cards}
 </div>
-<div style="text-align:center;padding:10px 0 24px;">
-  <a href="https://t.me/ZeroShell_help" target="_blank" class="btn" style="background:#229ed9;color:#fff;border-color:#229ed9;font-size:15px;padding:12px 32px;border-radius:10px;font-weight:700;">Contact on Telegram</a>
-  <div style="font-size:11px;color:var(--dim);margin-top:8px;">Usually responds within a few hours</div>
+{login_note}
+{pay_form}
+<div style="background:linear-gradient(135deg,#0a1520,#0d2030);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:24px;margin-bottom:20px;">
+<div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:18px;">কীভাবে কাজ করে?</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+<div style="text-align:center;padding:16px;background:rgba(255,255,255,.04);border-radius:12px;"><div style="font-size:26px;margin-bottom:8px;">1</div><div style="font-size:13px;color:#fff;font-weight:700;margin-bottom:4px;">Plan বেছে নিন</div><div style="font-size:11px;color:rgba(255,255,255,.45);">Monthly / 6M / Annual</div></div>
+<div style="text-align:center;padding:16px;background:rgba(255,255,255,.04);border-radius:12px;"><div style="font-size:26px;margin-bottom:8px;">2</div><div style="font-size:13px;color:#fff;font-weight:700;margin-bottom:4px;">Crypto পাঠান</div><div style="font-size:11px;color:rgba(255,255,255,.45);">QR scan বা address copy</div></div>
+<div style="text-align:center;padding:16px;background:rgba(255,255,255,.04);border-radius:12px;"><div style="font-size:26px;margin-bottom:8px;">3</div><div style="font-size:13px;color:#fff;font-weight:700;margin-bottom:4px;">TxID দিন</div><div style="font-size:11px;color:rgba(255,255,255,.45);">Form এ paste করুন</div></div>
+<div style="text-align:center;padding:16px;background:rgba(0,245,255,.06);border-radius:12px;border:1px solid rgba(0,245,255,.2);"><div style="font-size:26px;margin-bottom:8px;">⚡</div><div style="font-size:13px;color:#00f5ff;font-weight:800;margin-bottom:4px;">Auto Verified!</div><div style="font-size:11px;color:rgba(255,255,255,.45);">Instant Premium badge</div></div>
 </div>
 </div>
-<style>@media(max-width:680px){{.plan-grid{{grid-template-columns:1fr!important;}}}}</style>'''
+<div style="text-align:center;padding:6px 0 20px;font-size:12px;color:rgba(255,255,255,.3);">Manual verification: <a href="https://t.me/ZeroShell_help" target="_blank" style="color:#229ed9;">@ZeroShell_help</a></div>
+</div>'''
     return base(c,"Premium",session.get('theme','cyan'))
 
 @app.route('/toggle-mode')
