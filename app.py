@@ -627,7 +627,7 @@ def all_users():
   return base(c,"Premium Members",session.get('theme','cyan'))
 
 # ━━━ AUTO VERIFY ━━━
-PAYMENT_ADDRS={'USDT':'TBWUnddB2J5cckALZenPo6KQJwLzysEohE','BTC':'1N39KVvVK8itaGr7odbrTKnBdbwt4n7PoY','ETH':'0x4382fd71bd5a4d921c27d851764d8c76ccc5d143','LTC':'LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf'}
+PAYMENT_ADDRS={'USDT':'TBWUnddB2J5cckALZenPo6KQJwLzysEohE','BTC':'1N39KVvVK8itaGr7odbrTKnBdbwt4n7PoY','ETH':'0xd4c1ff57a77ce3a7b99ff96b410f05501b84b838','LTC':'LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf'}
 PLAN_PRICES={'1month':10,'6month':40,'1year':80}
 
 def auto_verify_tx(coin,tx_hash,plan):
@@ -801,7 +801,7 @@ def premium_page():
   cards=''.join(plan_card(p) for p in plans)
 
   # coin cards
-  COINS=[('USDT','TBWUnddB2J5cckALZenPo6KQJwLzysEohE','TRC20 (Tron)','#26a17b'),('BTC','1N39KVvVK8itaGr7odbrTKnBdbwt4n7PoY','Bitcoin','#f7931a'),('ETH','0x4382fd71bd5a4d921c27d851764d8c76ccc5d143','ERC20','#627eea'),('LTC','LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf','Litecoin','#bfbbbb')]
+  COINS=[('USDT','TBWUnddB2J5cckALZenPo6KQJwLzysEohE','TRC20 (Tron)','#26a17b'),('BTC','1N39KVvVK8itaGr7odbrTKnBdbwt4n7PoY','Bitcoin','#f7931a'),('ETH','0xd4c1ff57a77ce3a7b99ff96b410f05501b84b838','ERC20','#627eea'),('LTC','LcU6RqsSHQ8XUUP6xDEWDBWUts8wUe5adf','Litecoin','#bfbbbb')]
   coin_cards=''.join(
     '<div style="background:var(--card);border:1px solid var(--border);border-top:3px solid '+cl+';border-radius:12px;padding:16px;text-align:center;">'
     '<div style="font-size:14px;font-weight:800;color:'+cl+';margin-bottom:10px;">'+cn+'</div>'
@@ -1477,33 +1477,57 @@ def profile(username):
       f'<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>{lbl}</a>')
   links_html=''.join(mk_link(l) for l in links_raw if l)
   is_own=session.get('user')==username
+  # premium banner (own profile, is premium)
   prem_banner=''
   if _ud.get('is_premium',0):
-    prem_banner=(f'<div style="background:linear-gradient(135deg,#7b2ff7,#f107a3,#ffd700);'
-      f'border-radius:10px;padding:10px 16px;margin-bottom:12px;display:flex;align-items:center;gap:10px;">'
-      f'<div style="flex:1;"><div style="font-size:13px;font-weight:800;color:#fff;">PREMIUM MEMBER</div>'
-      f'<div style="font-size:11px;color:rgba(255,255,255,.7);">{user["premium_note"] or "VIP"}</div></div>'
-      f'<div style="font-size:16px;font-weight:900;color:#ffd700;border:2px solid #ffd700;border-radius:6px;padding:2px 10px;">VIP</div></div>')
-  def menu_link(href,icon_path,label,danger=False):
-    col='#ff453a' if danger else 'var(--t)'
-    hov='rgba(255,69,58,.06)' if danger else 'rgba(128,128,128,.06)'
-    return (f'<a href="{href}" style="display:flex;align-items:center;gap:10px;padding:10px 14px;'
-      f'border-radius:8px;color:{col};text-decoration:none;font-size:13px;font-weight:600;transition:background .15s;" '
-      f'onmouseover="this.style.background=\'{hov}\'" onmouseout="this.style.background=\'transparent\'">'
-      f'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">{icon_path}</svg>{label}</a>')
+    prem_banner=('<div style="background:linear-gradient(135deg,#7b2ff7,#f107a3,#ffd700);'
+      'border-radius:10px;padding:10px 16px;margin-bottom:12px;display:flex;align-items:center;gap:10px;">'
+      '<div style="flex:1;"><div style="font-size:13px;font-weight:800;color:#fff;">⭐ PREMIUM MEMBER</div>'
+      f'<div style="font-size:11px;color:rgba(255,255,255,.7);">{_ud.get("premium_note","") or "VIP Access"}</div></div>'
+      '<div style="font-size:16px;font-weight:900;color:#ffd700;border:2px solid #ffd700;border-radius:6px;padding:2px 10px;">VIP</div></div>')
+  # premium CTA for non-premium (own profile only)
+  prem_cta=''
+  if is_own and not _ud.get('is_premium',0):
+    prem_cta=('<div style="background:linear-gradient(135deg,rgba(123,47,247,.15),rgba(241,7,163,.1));'
+      'border:1px solid rgba(123,47,247,.35);border-radius:14px;padding:20px;text-align:center;">'
+      '<div style="font-size:15px;font-weight:800;color:#ffd700;margin-bottom:6px;">⭐ ZeroShell Premium</div>'
+      '<div style="font-size:12px;color:rgba(255,255,255,.6);margin-bottom:16px;">More posts · VIP badge · Boosted pastes · 5 profile links</div>'
+      '<div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;">'
+      '<div style="background:rgba(0,0,0,.3);border:1px solid rgba(255,215,0,.2);border-radius:10px;padding:12px 18px;min-width:90px;">'
+      '<div style="font-size:19px;font-weight:900;color:#fff;">$20</div>'
+      '<div style="font-size:11px;color:rgba(255,255,255,.5);">3 Months</div></div>'
+      '<div style="background:rgba(123,47,247,.25);border:2px solid rgba(255,215,0,.5);border-radius:10px;padding:12px 18px;min-width:90px;position:relative;">'
+      '<div style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:#ffd700;color:#000;font-size:9px;font-weight:800;padding:2px 8px;border-radius:99px;">BEST VALUE</div>'
+      '<div style="font-size:19px;font-weight:900;color:#ffd700;">$40</div>'
+      '<div style="font-size:11px;color:rgba(255,255,255,.5);">6 Months</div></div>'
+      '<div style="background:rgba(0,0,0,.3);border:1px solid rgba(255,215,0,.2);border-radius:10px;padding:12px 18px;min-width:90px;">'
+      '<div style="font-size:19px;font-weight:900;color:#fff;">$60</div>'
+      '<div style="font-size:11px;color:rgba(255,255,255,.5);">1 Year</div></div>'
+      '</div>'
+      '<a href="/premium" style="display:inline-block;background:linear-gradient(135deg,#7b2ff7,#f107a3);'
+      'color:#fff;text-decoration:none;padding:10px 28px;border-radius:8px;font-size:13px;font-weight:700;'
+      'letter-spacing:.5px;">Upgrade to Premium →</a>'
+      '</div>')
+  # sidebar menu (own profile)
+  def ml(href,label,active=False,danger=False):
+    col='#ff453a' if danger else ('var(--p)' if active else 'var(--t)')
+    bg='rgba(128,128,128,.12)' if active else 'transparent'
+    hov='rgba(255,69,58,.08)' if danger else 'rgba(128,128,128,.08)'
+    return (f'<a href="{href}" style="display:flex;align-items:center;padding:11px 14px;'
+      f'border-radius:8px;background:{bg};color:{col};text-decoration:none;font-size:13px;font-weight:{"700" if active else "600"};'
+      f'transition:background .15s;" onmouseover="this.style.background=\'{hov}\'" onmouseout="this.style.background=\'{bg}\'">{label}</a>')
   own_menu=''
   if is_own:
     own_menu=(
       '<div style="background:var(--card);border:1px solid var(--bd);border-radius:12px;overflow:hidden;padding:5px;">'
-      +'<a href="/profile/'+username+'" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;background:rgba(128,128,128,.1);color:var(--p);text-decoration:none;font-size:13px;font-weight:700;">'
-      +'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</a>'
-      +menu_link('/settings','<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>','Profile Settings')
-      +menu_link('/new','<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>','My Pastes')
-      +menu_link('/api/v1/docs','<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>','API')
-      +menu_link('/logout','<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>','Logout',danger=True)
+      +ml(f'/profile/{username}','📊 Dashboard',active=True)
+      +ml('/settings','⚙️ Profile Settings')
+      +ml('/new','📝 My Pastes')
+      +ml('/api/v1/docs','⟨/⟩ API')
+      +ml('/logout','→ Logout',danger=True)
       +'</div>'
     )
-  follow_btn=(f'<a href="/follow/{username}" class="btn {'follow-btn following' if is_following else 'follow-btn'}" style="width:100%;justify-content:center;display:flex;padding:10px;margin-top:8px;">{"Unfollow" if is_following else "+ Follow"}</a>') if not is_own and session.get('user_id') else ''
+  follow_btn=(f'<a href="/follow/{username}" class="btn {'follow-btn following' if is_following else 'follow-btn'}" style="width:100%;justify-content:center;display:flex;padding:10px;margin-top:8px;">{"✓ Following" if is_following else "+ Follow"}</a>') if not is_own and session.get('user_id') else ''
   c=f'''<div style="max-width:1100px;margin:0 auto;display:grid;grid-template-columns:230px 1fr;gap:18px;align-items:start;">
 <div style="position:sticky;top:70px;display:flex;flex-direction:column;gap:10px;">
 {own_menu}{follow_btn}
@@ -1527,6 +1551,7 @@ def profile(username):
     </div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">{badge_cards}</div>
+  {prem_cta}
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
     <div class="card"><div style="font-size:10px;font-weight:700;color:var(--p);letter-spacing:1px;margin-bottom:8px;">PASTES 7d</div><canvas id="pc2" height="100"></canvas></div>
     <div class="card"><div style="font-size:10px;font-weight:700;color:#00cc66;letter-spacing:1px;margin-bottom:8px;">VIEWS 7d</div><canvas id="vc2" height="100"></canvas></div>
